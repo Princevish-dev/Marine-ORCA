@@ -7,22 +7,22 @@ import { User, Ship, LogOut, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [fullName, setFullName] = useState('');
-  const [vesselName, setVesselName] = useState('');
-  const [message, setMessage] = useState('');
-  const router = useRouter();
+  const [Loading, Setloading] = useState(true);
+  const [Saving, Setsaving] = useState(false);
+  const [Usr, Setusr] = useState<any>(null);
+  const [Fullname, Setfullname] = useState('');
+  const [Vesselname, Setvesselname] = useState('');
+  const [Message, Setmessage] = useState('');
+  const Router = useRouter();
 
   useEffect(() => {
-    async function loadProfile() {
+    async function Loadprofile() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        router.push('/login');
+        Router.push('/login');
         return;
       }
-      setUser(session.user);
+      Setusr(session.user);
 
       const { data } = await supabase
         .from('profiles')
@@ -31,39 +31,39 @@ export default function ProfilePage() {
         .single();
 
       if (data) {
-        setFullName(data.full_name || '');
-        setVesselName(data.vessel_name || '');
+        Setfullname(data.full_name || '');
+        Setvesselname(data.vessel_name || '');
       }
-      setLoading(false);
+      Setloading(false);
     }
-    loadProfile();
-  }, [router]);
+    Loadprofile();
+  }, [Router]);
 
-  const updateProfile = async (e: React.FormEvent) => {
+  const Updateprofile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    setMessage('');
+    Setsaving(true);
+    Setmessage('');
 
     const { error } = await supabase.from('profiles').upsert({
-      id: user.id,
-      full_name: fullName,
-      vessel_name: vesselName,
+      id: Usr.id,
+      full_name: Fullname,
+      vessel_name: Vesselname,
     });
 
     if (error) {
-      setMessage(`Error: ${error.message}`);
+      Setmessage(`Error: ${error.message}`);
     } else {
-      setMessage('Profile updated successfully.');
+      Setmessage('Profile updated successfully.');
     }
-    setSaving(false);
+    Setsaving(false);
   };
 
-  const handleLogout = async () => {
+  const Handlelogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    Router.push('/login');
   };
 
-  if (loading) return null;
+  if (Loading) return null;
 
   return (
     <div className="min-h-screen p-6 bg-[#030712] text-slate-200">
@@ -74,7 +74,7 @@ export default function ProfilePage() {
             Back to Dashboard
           </Link>
           <button
-            onClick={handleLogout}
+            onClick={Handlelogout}
             className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors"
           >
             <LogOut className="w-4 h-4" />
@@ -85,19 +85,19 @@ export default function ProfilePage() {
         <div className="glass-card-dark p-8">
           <h1 className="text-2xl font-bold tracking-widest text-white mb-6 uppercase">Vessel Profile</h1>
           
-          {message && (
-            <div className={`p-3 rounded-lg text-sm mb-6 ${message.includes('Error') ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
-              {message}
+          {Message && (
+            <div className={`p-3 rounded-lg text-sm mb-6 ${Message.includes('Error') ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+              {Message}
             </div>
           )}
 
-          <form onSubmit={updateProfile} className="space-y-6">
+          <form onSubmit={Updateprofile} className="space-y-6">
             <div>
               <label className="block text-xs text-slate-400 uppercase tracking-wider mb-2">Account Email</label>
               <input
                 type="text"
                 disabled
-                value={user?.email || ''}
+                value={Usr?.email || ''}
                 className="w-full bg-slate-900/50 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-500 cursor-not-allowed"
               />
             </div>
@@ -110,8 +110,8 @@ export default function ProfilePage() {
                 </div>
                 <input
                   type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  value={Fullname}
+                  onChange={(e) => Setfullname(e.target.value)}
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
@@ -125,8 +125,8 @@ export default function ProfilePage() {
                 </div>
                 <input
                   type="text"
-                  value={vesselName}
-                  onChange={(e) => setVesselName(e.target.value)}
+                  value={Vesselname}
+                  onChange={(e) => Setvesselname(e.target.value)}
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
@@ -134,10 +134,10 @@ export default function ProfilePage() {
 
             <button
               type="submit"
-              disabled={saving}
+              disabled={Saving}
               className="px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold rounded-lg text-sm transition-colors"
             >
-              {saving ? 'Saving...' : 'Save Profile'}
+              {Saving ? 'Saving...' : 'Save Profile'}
             </button>
           </form>
         </div>

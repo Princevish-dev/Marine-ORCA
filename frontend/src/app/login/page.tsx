@@ -7,62 +7,62 @@ import { Shield, Mail, Lock, User, Ship } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [vesselName, setVesselName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const router = useRouter();
+  const [Islogin, Setislogin] = useState(true);
+  const [Email, Setemail] = useState('');
+  const [Password, Setpassword] = useState('');
+  const [Fullname, Setfullname] = useState('');
+  const [Vesselname, Setvesselname] = useState('');
+  const [Loading, Setloading] = useState(false);
+  const [Error, Seterror] = useState('');
+  const Router = useRouter();
 
-  const handleAuth = async (e: React.FormEvent) => {
+  const Handleauth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    Setloading(true);
+    Seterror('');
 
     try {
-      if (isLogin) {
+      if (Islogin) {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: Email,
+          password: Password,
         });
         if (error) throw error;
-        router.push('/');
+        Router.push('/');
       } else {
         const { error } = await supabase.auth.signUp({
-          email,
-          password,
+          email: Email,
+          password: Password,
           options: {
             data: {
-              full_name: fullName,
-              vessel_name: vesselName,
+              full_name: Fullname,
+              vessel_name: Vesselname,
             },
           },
         });
         if (error) throw error;
-        setIsLogin(true);
-        setError('Signup successful! You can now log in.');
+        Setislogin(true);
+        Seterror('Signup successful! You can now log in.');
       }
     } catch (err: any) {
-      setError(err.message);
+      Seterror(err.message);
     } finally {
-      setLoading(false);
+      Setloading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError('');
+  const Handlegooglelogin = async () => {
+    Setloading(true);
+    Seterror('');
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
       });
       if (error) throw error;
     } catch (err: any) {
-      setError(err.message);
+      Seterror(err.message);
     } finally {
-      setLoading(false);
+      Setloading(false);
     }
   };
 
@@ -83,14 +83,14 @@ export default function LoginPage() {
             <p className="text-xs text-slate-400 tracking-widest uppercase mt-1">Marine Intelligence</p>
           </div>
 
-          {error && (
-            <div className={`p-3 rounded-lg text-xs font-medium mb-6 ${error.includes('successful') ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-              {error}
+          {Error && (
+            <div className={`p-3 rounded-lg text-xs font-medium mb-6 ${Error.includes('successful') ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+              {Error}
             </div>
           )}
 
-          <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && (
+          <form onSubmit={Handleauth} className="space-y-4">
+            {!Islogin && (
               <>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -100,8 +100,8 @@ export default function LoginPage() {
                     type="text"
                     required
                     placeholder="Full Name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    value={Fullname}
+                    onChange={(e) => Setfullname(e.target.value)}
                     className="w-full bg-slate-900/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500/50 transition-colors"
                   />
                 </div>
@@ -112,8 +112,8 @@ export default function LoginPage() {
                   <input
                     type="text"
                     placeholder="Vessel Name (Optional)"
-                    value={vesselName}
-                    onChange={(e) => setVesselName(e.target.value)}
+                    value={Vesselname}
+                    onChange={(e) => Setvesselname(e.target.value)}
                     className="w-full bg-slate-900/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500/50 transition-colors"
                   />
                 </div>
@@ -128,8 +128,8 @@ export default function LoginPage() {
                 type="email"
                 required
                 placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={Email}
+                onChange={(e) => Setemail(e.target.value)}
                 className="w-full bg-slate-900/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500/50 transition-colors"
               />
             </div>
@@ -142,18 +142,18 @@ export default function LoginPage() {
                 type="password"
                 required
                 placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={Password}
+                onChange={(e) => Setpassword(e.target.value)}
                 className="w-full bg-slate-900/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500/50 transition-colors"
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={Loading}
               className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold py-2.5 rounded-lg text-sm transition-colors mt-2"
             >
-              {loading ? 'Authenticating...' : isLogin ? 'Sign In' : 'Create Account'}
+              {Loading ? 'Authenticating...' : Islogin ? 'Sign In' : 'Create Account'}
             </button>
           </form>
 
@@ -162,8 +162,8 @@ export default function LoginPage() {
           </div>
 
           <button
-            onClick={handleGoogleLogin}
-            disabled={loading}
+            onClick={Handlegooglelogin}
+            disabled={Loading}
             className="w-full bg-white hover:bg-slate-50 text-slate-900 font-semibold py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -178,12 +178,12 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <button
               onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
+                Setislogin(!Islogin);
+                Seterror('');
               }}
               className="text-xs text-cyan-500/70 hover:text-cyan-400 transition-colors"
             >
-              {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+              {Islogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
             </button>
           </div>
         </div>

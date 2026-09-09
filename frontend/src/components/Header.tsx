@@ -3,22 +3,22 @@
 import { Activity, Shield, Wifi, WifiOff, AlertTriangle, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
-interface HeaderProps {
-  guardianStatus: 'ACTIVE' | 'DEGRADED' | 'OFFLINE';
-  lastScan?: string;
-  demoMode?: boolean;
-  user?: any;
-  onLogout?: () => void;
+interface Headerprops {
+  Guardianstatus: 'ACTIVE' | 'DEGRADED' | 'OFFLINE';
+  Lastscan?: string;
+  Demomode?: boolean;
+  Usr?: any;
+  Onlogout?: () => void;
 }
 
-export default function Header({ guardianStatus, lastScan, demoMode, user, onLogout }: HeaderProps) {
-  const statusConfig = {
+export default function Header({ Guardianstatus, Lastscan, Demomode, Usr, Onlogout }: Headerprops) {
+  const Statusconfig = {
     ACTIVE: { color: 'text-emerald-400', dot: 'bg-emerald-400', label: 'GUARDIAN ACTIVE', icon: Wifi },
     DEGRADED: { color: 'text-yellow-400', dot: 'bg-yellow-400', label: 'DEGRADED', icon: AlertTriangle },
     OFFLINE: { color: 'text-red-400', dot: 'bg-red-400', label: 'OFFLINE', icon: WifiOff },
-  }[guardianStatus];
+  }[Guardianstatus];
 
-  const StatusIcon = statusConfig.icon;
+  const Statusicon = Statusconfig.icon;
 
   return (
     <header className="glass-card-dark border-b border-cyan-500/10 px-6 py-3 flex items-center justify-between z-10 relative">
@@ -51,7 +51,7 @@ export default function Header({ guardianStatus, lastScan, demoMode, user, onLog
           <span className="text-xs text-emerald-400 font-medium tracking-wider">SYSTEM ONLINE</span>
         </div>
 
-        {demoMode && (
+        {Demomode && (
           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-1">
             <AlertTriangle className="w-3 h-3 text-amber-400" />
             <span className="text-xs text-amber-400 font-semibold">DEMO MODE</span>
@@ -61,14 +61,14 @@ export default function Header({ guardianStatus, lastScan, demoMode, user, onLog
 
       <div className="flex items-center gap-4">
         <div className="hidden sm:flex flex-col items-end">
-          <div className={`flex items-center gap-1.5 ${statusConfig.color}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot} animate-pulse`} />
-            <StatusIcon className="w-3 h-3" />
-            <span className="text-xs font-semibold tracking-wide">{statusConfig.label}</span>
+          <div className={`flex items-center gap-1.5 ${Statusconfig.color}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${Statusconfig.dot} animate-pulse`} />
+            <Statusicon className="w-3 h-3" />
+            <span className="text-xs font-semibold tracking-wide">{Statusconfig.label}</span>
           </div>
-          {lastScan && (
+          {Lastscan && (
             <span className="text-[10px] text-slate-500 mt-0.5">
-              Last scan: {lastScan}
+              Last scan: {Lastscan}
             </span>
           )}
         </div>
@@ -78,13 +78,13 @@ export default function Header({ guardianStatus, lastScan, demoMode, user, onLog
           <span className="text-xs text-slate-300 font-medium">SIH 2026</span>
         </div>
 
-        {user ? (
+        {Usr ? (
           <div className="flex items-center gap-3 border-l border-slate-700 pl-4 ml-2">
             <Link href="/profile" className="flex items-center gap-2 text-xs text-slate-300 hover:text-cyan-400 transition-colors">
               <User className="w-4 h-4" />
               <span>Profile</span>
             </Link>
-            <button onClick={onLogout} className="text-xs text-slate-500 hover:text-red-400 transition-colors">
+            <button onClick={Onlogout} className="text-xs text-slate-500 hover:text-red-400 transition-colors">
               <LogOut className="w-4 h-4" />
             </button>
           </div>
