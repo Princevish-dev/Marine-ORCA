@@ -109,7 +109,6 @@ orca/
 ├── supabase/
 │   └── schema.sql         
 ├── .env.example
-├── docker-compose.yml
 └── README.md
 ```
 
