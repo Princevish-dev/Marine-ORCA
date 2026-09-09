@@ -12,6 +12,7 @@ WIND_EXTREME = 60.0
 WAVE_MODERATE = 1.5
 WAVE_HIGH = 2.5
 WAVE_EXTREME = 4.0
+WAVE_HIGH_THRESHOLD = WAVE_HIGH
 
 PFZ_BONUS_MAX = 10.0
 
@@ -37,7 +38,7 @@ def calculate_safety(
             wind_status = "CRITICAL"
             wind_label = f"Extreme ({ws:.0f} km/h)"
         elif ws >= WIND_HIGH:
-            wind_penalty = 20.0
+            wind_penalty = 21.0
             wind_status = "WARNING"
             wind_label = f"High ({ws:.0f} km/h)"
         elif ws >= WIND_MODERATE:
@@ -59,7 +60,7 @@ def calculate_safety(
             wave_status = "CRITICAL"
             wave_label = f"Extreme ({wh:.1f} m)"
         elif wh >= WAVE_HIGH:
-            wave_penalty = 25.0
+            wave_penalty = 26.0
             wave_status = "WARNING"
             wave_label = f"High ({wh:.1f} m)"
         elif wh >= WAVE_MODERATE:

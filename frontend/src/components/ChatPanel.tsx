@@ -13,6 +13,7 @@ interface Chatpanelprops {
   onResponse?: (response: ChatResponse) => void;
   defaultLat?: number;
   defaultLon?: number;
+  emergencyQuery?: { ts: number; text: string };
 }
 
 const LOADING_STAGES = [
@@ -102,7 +103,7 @@ function Assistantmessage({ Msg }: { Msg: ChatMessage }) {
   );
 }
 
-export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon = 80.2707 }: Chatpanelprops) {
+export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon = 80.2707, emergencyQuery }: Chatpanelprops) {
   const [Messages, Setmessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
@@ -125,6 +126,8 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
   useEffect(() => {
     if (transcript) Setinput(transcript);
   }, [transcript]);
+
+
 
   useEffect(() => {
     BottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -195,6 +198,12 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
       Stoploadingcycle();
     }
   }, [Input, Isloading, Lang, defaultLat, defaultLon, onResponse, speak, Voicesupported]);
+
+  useEffect(() => {
+    if (emergencyQuery && emergencyQuery.ts > 0) {
+      Handlesend(emergencyQuery.text);
+    }
+  }, [emergencyQuery, Handlesend]);
 
   const Handlekeydown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

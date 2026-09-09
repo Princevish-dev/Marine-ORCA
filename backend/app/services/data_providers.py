@@ -1,8 +1,12 @@
 from __future__ import annotations
 import httpx
 import math
+import json
+import re
+from email.utils import parsedate_to_datetime
+from xml.etree import ElementTree
 from datetime import datetime, timezone
-from app.models import WeatherObservation, MarineObservation, OceanObservation
+from app.models import WeatherObservation, MarineObservation, OceanObservation, WarningEvent
 from app.config import settings
 from app.services.demo_fixtures import DEMO_WEATHER, DEMO_MARINE, DEMO_OCEAN
 
@@ -17,6 +21,79 @@ _MARINE_PARAMS = (
 )
 
 _TIMEOUT = 10.0
+
+
+def _parse_warning_time(value: str | None) -> datetime:
+    if not value:
+        return datetime.now(timezone.utc)
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
+    except ValueError:
+        try:
+            return parsedate_to_datetime(value).astimezone(timezone.utc)
+        except (TypeError, ValueError):
+            return datetime.now(timezone.utc)
+
+
+def _warning_severity(text: str) -> str:
+    normalized = text.upper()
+    if "RED" in normalized or "CYCLONE" in normalized:
+        return "RED"
+    if "ORANGE" in normalized:
+        return "ORANGE"
+    if "YELLOW" in normalized or "CAUTION" in normalized:
+        return "YELLOW"
+    return "INFO"
+
+
+def _warning_from_mapping(item: dict, source: str, index: int) -> WarningEvent:
+    title = str(item.get("title") or item.get("headline") or item.get("event") or "Marine warning")
+    description = str(item.get("description") or item.get("summary") or title)
+    severity = str(item.get("severity") or _warning_severity(f"{title} {description}")).upper()
+    if severity not in {"INFO", "YELLOW", "ORANGE", "RED"}:
+        severity = _warning_severity(f"{title} {description}")
+    return WarningEvent(
+        id=str(item.get("id") or f"{source}-{index}-{abs(hash(title))}"),
+        source=source,
+        severity=severity,
+        title=title[:240],
+        description=description[:1000],
+        affected_area=str(item.get("affected_area") or item.get("area") or "India coast"),
+        effective_time=_parse_warning_time(item.get("effective_time") or item.get("pubDate")),
+        expiry_time=_parse_warning_time(item["expiry_time"]) if item.get("expiry_time") else None,
+        is_active=bool(item.get("is_active", True)),
+    )
+
+
+def _parse_warning_feed(payload: str, source: str) -> list[WarningEvent]:
+    try:
+        data = json.loads(payload)
+        items = data if isinstance(data, list) else data.get("warnings", data.get("items", []))
+        if isinstance(items, list):
+            return [_warning_from_mapping(item, source, i) for i, item in enumerate(items) if isinstance(item, dict)]
+    except json.JSONDecodeError:
+        pass
+
+    root = ElementTree.fromstring(payload)
+    results: list[WarningEvent] = []
+    for index, item in enumerate(root.findall(".//item")):
+        text = lambda tag: next((node.text for node in item if node.tag.rsplit("}", 1)[-1] == tag), "")
+        title = text("title") or "Marine warning"
+        description = re.sub(r"<[^>]+>", " ", text("description") or title).strip()
+        results.append(_warning_from_mapping({"title": title, "description": description, "pubDate": text("pubDate")}, source, index))
+    return results
+
+
+async def fetch_warning_events() -> list[WarningEvent]:
+    if not settings.imd_feed_url:
+        return []
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT, follow_redirects=True) as client:
+            response = await client.get(settings.imd_feed_url)
+            response.raise_for_status()
+        return _parse_warning_feed(response.text, "IMD Warning Feed")
+    except Exception:
+        return []
 
 
 async def fetch_weather(lat: float, lon: float) -> WeatherObservation:
@@ -115,20 +192,36 @@ async def fetch_ocean_observation(lat: float, lon: float) -> OceanObservation:
         return OceanObservation(**DEMO_OCEAN)
 
     try:
-        weather = await fetch_weather(lat, lon)
-        sst = weather.temperature_c - 1.5
-        chlorophyll = 0.5 + 0.8 * math.exp(-abs(lat - 12.0) / 3.0)
+        from app.services.isro_loader import get_isro_ocean_data
+        isro_data = get_isro_ocean_data(lat, lon)
+        
+        if isro_data["sst_celsius"] is not None and isro_data["chlorophyll_mgm3"] is not None:
+            return OceanObservation(
+                source=isro_data["source"],
+                retrieved_at=datetime.fromisoformat(isro_data["retrieved_at"]),
+                latitude=lat,
+                longitude=lon,
+                sst_celsius=isro_data["sst_celsius"],
+                chlorophyll_mgm3=isro_data["chlorophyll_mgm3"],
+                data_type=isro_data["data_type"],
+                is_demo=isro_data["is_demo"],
+            )
+        else:
+            # Fallback to model if ISRO data doesn't cover this location
+            weather = await fetch_weather(lat, lon)
+            sst = weather.temperature_c - 1.5
+            chlorophyll = 0.5 + 0.8 * math.exp(-abs(lat - 12.0) / 3.0)
 
-        return OceanObservation(
-            source="Modelled proxy (EO-derived estimate — not satellite observation)",
-            retrieved_at=datetime.now(timezone.utc),
-            latitude=lat,
-            longitude=lon,
-            sst_celsius=round(sst, 1),
-            chlorophyll_mgm3=round(chlorophyll, 2),
-            data_type="MODEL",
-            is_demo=False,
-        )
+            return OceanObservation(
+                source="Modelled proxy (EO-derived estimate — not satellite observation)",
+                retrieved_at=datetime.now(timezone.utc),
+                latitude=lat,
+                longitude=lon,
+                sst_celsius=round(sst, 1),
+                chlorophyll_mgm3=round(chlorophyll, 2),
+                data_type="MODEL",
+                is_demo=False,
+            )
     except Exception as exc:
         demo = OceanObservation(**DEMO_OCEAN)
         demo.source = f"DEMO FALLBACK ocean (error: {str(exc)[:60]})"

@@ -57,7 +57,7 @@ LLM:      Google Gemini 1.5 Flash — interpretation + explanation only
 | Agent trace (expandable) | ✅ | Per-stage timing + source |
 | Voice I/O | ✅ | Browser Web Speech API |
 | Interactive marine map (Deck.gl + React Map GL) | ✅ | PFZ, route, geofence layers |
-| Supabase Auth (Email + Google OAuth) | ✅ | Protected dashboard |
+| Supabase Auth (Email + Google OAuth) | ⚠️ | Frontend session/profile flow; backend API authorization must be added before production |
 | User Profiles (vessel, captain) | ✅ | Supabase Postgres + RLS |
 | ISRO EO Data Loader | ✅ | CSV ingestion for SST/Chl |
 | Demo mode (fixture data) | ✅ | Clearly labelled |
@@ -131,7 +131,7 @@ copy .env.example .env
 python -m venv venv
 venv\Scripts\activate
 
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 uvicorn app.main:app --reload --port 8000
 ```
@@ -224,6 +224,7 @@ See [`.env.example`](./.env.example) for all configurable variables.
 Critical:
 - `GEMINI_API_KEY` — LLM (get free at aistudio.google.com)
 - `DEMO_MODE=true` — use fixture data (no live APIs needed)
+- `APP_ENV=production` requires a random `JWT_SECRET` of at least 32 characters and disables demo mode
 - `GUARDIAN_INTERVAL_SECONDS=15` — fast guardian for demo
 - `NEXT_PUBLIC_SUPABASE_URL` — your Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — your Supabase anon key
@@ -238,6 +239,8 @@ Critical:
 - Route fuel savings are modelled estimates, not vessel measurements
 - Voice recognition quality depends on browser and microphone
 - Gemini API key required for NL responses; deterministic fallback provided
+- Live IMD warning ingestion accepts normalized JSON or RSS when `IMD_FEED_URL` is configured; demo warnings remain synthetic
+- Production REST endpoints verify Supabase-compatible JWT bearer tokens using the configured `JWT_SECRET`; keep SSE behind a trusted network boundary if alerts become user-specific
 
 ---
 

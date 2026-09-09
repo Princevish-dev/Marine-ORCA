@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Shield, Mail, Lock, User, Ship } from 'lucide-react';
@@ -57,6 +57,9 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
       });
       if (error) throw error;
     } catch (err: any) {
@@ -65,6 +68,11 @@ export default function LoginPage() {
       Setloading(false);
     }
   };
+
+  const [Mounted, Setmounted] = useState(false);
+  useEffect(() => Setmounted(true), []);
+
+  if (!Mounted) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#030712] relative overflow-hidden">

@@ -75,8 +75,12 @@ async def security_headers(request: Request, call_next):
 async def limit_request_size(request: Request, call_next):
     if request.method == "POST":
         content_length = request.headers.get("content-length")
-        if content_length and int(content_length) > 50_000:
-            return JSONResponse({"detail": "Request too large"}, status_code=413)
+        if content_length:
+            try:
+                if int(content_length) > 50_000:
+                    return JSONResponse({"detail": "Request too large"}, status_code=413)
+            except ValueError:
+                return JSONResponse({"detail": "Invalid Content-Length"}, status_code=400)
     return await call_next(request)
 
 

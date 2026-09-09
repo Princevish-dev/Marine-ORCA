@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 
 
 class Settings(BaseSettings):
@@ -10,8 +10,9 @@ class Settings(BaseSettings):
     guardian_interval_seconds: int = 300
 
     demo_mode: bool = False
+    app_env: str = "development"
 
-    jwt_secret: str = "orca_dev_secret_2026"
+    jwt_secret: str = ""
     jwt_algorithm: str = "HS256"
 
     marine_api_url: str = "https://marine-api.open-meteo.com/v1/marine"
@@ -25,10 +26,24 @@ class Settings(BaseSettings):
 
     @field_validator("jwt_secret")
     @classmethod
-    def jwt_secret_not_default_in_prod(cls, v):
+    def validate_jwt_secret_length(cls, v):
+        if v and len(v) < 32:
+            raise ValueError("JWT_SECRET must be at least 32 characters")
         return v
 
-    @field_validator("marine_api_url", "weather_api_url")
+    @model_validator(mode="after")
+    def validate_production_security(self):
+        if self.app_env.lower() in {"production", "prod"}:
+            if not self.jwt_secret or self.jwt_secret in {
+                "orca_dev_secret_2026",
+                "orca_secret_key_change_in_production_2026",
+            }:
+                raise ValueError("JWT_SECRET must be configured in production")
+            if self.demo_mode:
+                raise ValueError("DEMO_MODE must be disabled in production")
+        return self
+
+    @field_validator("marine_api_url", "weather_api_url", "imd_feed_url")
     @classmethod
     def validate_urls(cls, v):
         if v and not v.startswith("https://"):

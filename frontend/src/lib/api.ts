@@ -1,11 +1,21 @@
 import type { ChatRequest, ChatResponse, AlertEvent } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+async function authHeaders(): Promise<HeadersInit> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return token
+    ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+    : { 'Content-Type': 'application/json' };
+}
+
 export async function sendChatMessage(req: ChatRequest): Promise<ChatResponse> {
+  const headers = await authHeaders();
   const res = await fetch(`${BASE_URL}/api/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(req),
   });
   if (!res.ok) {
@@ -16,25 +26,25 @@ export async function sendChatMessage(req: ChatRequest): Promise<ChatResponse> {
 }
 
 export async function fetchMarineData(lat: number, lon: number) {
-  const res = await fetch(`${BASE_URL}/api/marine?lat=${lat}&lon=${lon}`);
+  const res = await fetch(`${BASE_URL}/api/marine?lat=${lat}&lon=${lon}`, { headers: await authHeaders() });
   if (!res.ok) throw new Error(`Marine API error ${res.status}`);
   return res.json();
 }
 
 export async function fetchPFZ(lat: number, lon: number) {
-  const res = await fetch(`${BASE_URL}/api/pfz?lat=${lat}&lon=${lon}`);
+  const res = await fetch(`${BASE_URL}/api/pfz?lat=${lat}&lon=${lon}`, { headers: await authHeaders() });
   if (!res.ok) throw new Error(`PFZ API error ${res.status}`);
   return res.json();
 }
 
 export async function fetchLayers() {
-  const res = await fetch(`${BASE_URL}/api/layers`);
+  const res = await fetch(`${BASE_URL}/api/layers`, { headers: await authHeaders() });
   if (!res.ok) throw new Error(`Layers API error ${res.status}`);
   return res.json();
 }
 
 export async function fetchAlerts(): Promise<{ alerts: AlertEvent[] }> {
-  const res = await fetch(`${BASE_URL}/api/alerts`);
+  const res = await fetch(`${BASE_URL}/api/alerts`, { headers: await authHeaders() });
   if (!res.ok) throw new Error(`Alerts API error ${res.status}`);
   return res.json();
 }
@@ -46,7 +56,7 @@ export async function fetchHealth() {
 }
 
 export async function triggerTestAlert() {
-  const res = await fetch(`${BASE_URL}/api/alerts/test`, { method: 'POST' });
+  const res = await fetch(`${BASE_URL}/api/alerts/test`, { method: 'POST', headers: await authHeaders() });
   return res.json();
 }
 

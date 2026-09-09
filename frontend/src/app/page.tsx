@@ -26,6 +26,32 @@ const MarineMap = dynamic(() => import('@/components/MarineMap'), {
   ),
 });
 
+const playEmergencyBeep = () => {
+  try {
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+    
+    gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.2);
+    gainNode.gain.setValueAtTime(1, audioCtx.currentTime + 0.4);
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 0.6);
+    gainNode.gain.setValueAtTime(1, audioCtx.currentTime + 0.8);
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime + 1.0);
+    
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 1.2);
+  } catch (e) {
+    console.error("Audio beep failed", e);
+  }
+};
+
 export default function DashboardPage() {
   const [Guardianstatus, Setguardianstatus] = useState<'ACTIVE' | 'DEGRADED' | 'OFFLINE'>('OFFLINE');
   const [Lastscan, Setlastscan] = useState<string>('');
@@ -42,8 +68,14 @@ export default function DashboardPage() {
   const [Mapdata, Setmapdata] = useState<MapData | undefined>();
   const [Pfzcandidates, Setpfzcandidates] = useState<PFZCandidate[]>([]);
   const [Route, Setroute] = useState<RouteResult | undefined>();
-
   const [Righttab, Setrighttab] = useState<'safety' | 'pfz' | 'route' | 'evidence'>('safety');
+
+  const [Userlat, Setuserlat] = useState<number>(13.0827);
+  const [Userlon, Setuserlon] = useState<number>(80.2707);
+  const [Emergencyquery, Setemergencyquery] = useState<{ ts: number, text: string } | undefined>();
+
+  const [Mounted, Setmounted] = useState(false);
+  useEffect(() => Setmounted(true), []);
 
   const Handleresponse = useCallback((resp: ChatResponse) => {
     if (resp.safety) Setsafety(resp.safety);
@@ -61,19 +93,19 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    const isOauthCallback = window.location.hash.includes('access_token') || window.location.search.includes('code=');
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        Router.push('/login');
-      } else {
+      if (session) {
         Setusr(session.user);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        Router.push('/login');
-      } else {
+      if (session) {
         Setusr(session.user);
+      } else {
+        Setusr(null);
       }
     });
 
@@ -101,6 +133,29 @@ export default function DashboardPage() {
       (alert) => {
         Setactivealerts((prev) => {
           const Exists = prev.find((a) => a.id === alert.id);
+          if (!Exists && alert.severity === 'RED') {
+            playEmergencyBeep();
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  Setuserlat(pos.coords.latitude);
+                  Setuserlon(pos.coords.longitude);
+                  Setemergencyquery({
+                    ts: Date.now(),
+                    text: `CRITICAL DANGER: ${alert.title}! My current location is Lat: ${pos.coords.latitude.toFixed(4)}, Lon: ${pos.coords.longitude.toFixed(4)}. Find the nearest safe port and calculate an escape route immediately!`
+                  });
+                },
+                (err) => {
+                  console.error("Geolocation error:", err);
+                  Setemergencyquery({
+                    ts: Date.now(),
+                    text: `CRITICAL DANGER: ${alert.title}! My location tracking failed. Use my last known coordinates and find the nearest safe port with an escape route immediately!`
+                  });
+                },
+                { enableHighAccuracy: true }
+              );
+            }
+          }
           if (Exists) return prev.map((a) => (a.id === alert.id ? alert : a));
           return [alert, ...prev].slice(0, 5);
         });
@@ -128,6 +183,8 @@ export default function DashboardPage() {
     { id: 'evidence', label: '📎 Evidence' },
   ] as const;
 
+  if (!Mounted) return null;
+
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--navy-950)' }}>
       <Header
@@ -145,8 +202,9 @@ export default function DashboardPage() {
         <div className="w-[400px] flex-shrink-0 glass-card flex flex-col min-h-0 overflow-hidden">
           <ChatPanel
             onResponse={Handleresponse}
-            defaultLat={13.0827}
-            defaultLon={80.2707}
+            defaultLat={Userlat}
+            defaultLon={Userlon}
+            emergencyQuery={Emergencyquery}
           />
         </div>
 
@@ -161,13 +219,15 @@ export default function DashboardPage() {
                   DEMO DATA
                 </span>
               )}
-              <button
-                onClick={() => triggerTestAlert()}
-                className="text-[10px] text-slate-600 hover:text-amber-400 border border-slate-700/30 hover:border-amber-500/30 px-2 py-1 rounded transition-colors"
-                title="Trigger test Guardian alert (DEV)"
-              >
-                ⚡ Test Alert
-              </button>
+              {Demomode && (
+                <button
+                  onClick={() => triggerTestAlert()}
+                  className="text-[10px] text-slate-600 hover:text-amber-400 border border-slate-700/30 hover:border-amber-500/30 px-2 py-1 rounded transition-colors"
+                  title="Trigger test Guardian alert (demo only)"
+                >
+                  ⚡ Test Alert
+                </button>
+              )}
             </div>
           </div>
 

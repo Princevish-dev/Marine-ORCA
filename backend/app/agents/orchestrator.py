@@ -20,7 +20,8 @@ from app.models import (
     ChatRequest, ChatResponse, MapData,
 )
 from app.config import settings
-from app.services.data_providers import fetch_weather, fetch_marine, fetch_ocean_observation
+from app.services.data_providers import fetch_weather, fetch_marine, fetch_ocean_observation, fetch_warning_events
+from app.services.demo_fixtures import DEMO_WARNING
 from app.services.safety_calculator import calculate_safety
 from app.geospatial.engine import check_boundary_status, generate_pfz_candidates, get_geofence_geojson
 from app.routing.astar import build_route_grid
@@ -92,6 +93,14 @@ def planner_node(state: dict) -> dict:
     if not s.location:
         s.location = Coordinates(latitude=13.0827, longitude=80.2707)
 
+    if settings.demo_mode:
+        s.warnings = [WarningEvent(**DEMO_WARNING)]
+    elif settings.imd_feed_url:
+        try:
+            s.warnings = asyncio.get_event_loop().run_until_complete(fetch_warning_events())
+        except Exception:
+            s.warnings = []
+
     now = datetime.now(timezone.utc)
     s.time_window = TimeWindow(
         start=now + timedelta(hours=8),
@@ -103,8 +112,8 @@ def planner_node(state: dict) -> dict:
         "You are ORCA Planner. Extract intent from the marine query. "
         "Respond ONLY with JSON: "
         '{"intent": "...", "location_hint": "...", "time_hint": "...", '
-        '"agents": ["weather","marine","safety","geospatial","pfz","critic","report"]}'
-        "\nPossible intents: marine_safety, pfz_query, route_planning, general_info"
+        '"agents": ["weather","marine","safety","geospatial","pfz","critic","route","report"]}'
+        "\nPossible intents: marine_safety, pfz_query, route_planning, escape_route, general_info"
     )
     try:
         llm_out = _llm_call(query, system)
@@ -114,12 +123,17 @@ def planner_node(state: dict) -> dict:
             s.intent = parsed.get("intent", "marine_safety")
             agents = parsed.get("agents", [])
             mandatory = ["weather", "marine", "safety", "critic", "report"]
+            if s.intent == "escape_route":
+                mandatory.append("route")
             s.planned_agents = list(set(mandatory + agents))
         else:
             raise ValueError("No JSON in LLM response")
     except Exception:
         q_lower = query.lower()
-        if any(w in q_lower for w in ["route", "navigate", "shortest", "path", "रास्ता"]):
+        if any(w in q_lower for w in ["escape", "danger", "emergency", "nearest port"]):
+            s.intent = "escape_route"
+            s.planned_agents = ["weather", "marine", "safety", "geospatial", "route", "critic", "report"]
+        elif any(w in q_lower for w in ["route", "navigate", "shortest", "path", "रास्ता"]):
             s.intent = "route_planning"
             s.planned_agents = ["weather", "marine", "safety", "geospatial", "route", "critic", "report"]
         elif any(w in q_lower for w in ["pfz", "fishing zone", "where to fish", "मछली", "zone"]):
@@ -303,7 +317,21 @@ def route_agent_node(state: dict) -> dict:
     loc = s.location or Coordinates(latitude=13.0827, longitude=80.2707)
 
     try:
-        if s.pfz_result:
+        if s.intent == "escape_route" or "nearest port" in s.query.lower():
+            safe_ports = [
+                (13.0900, 80.2900), # Chennai Port
+                (17.6833, 83.2833), # Visakhapatnam Port
+                (9.9667, 76.2667),  # Kochi Port
+                (18.9333, 72.8333), # Mumbai Port
+                (22.0400, 88.0600), # Haldia Port
+            ]
+            import math
+            def dist(p1, p2):
+                return math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
+            
+            nearest = min(safe_ports, key=lambda p: dist((loc.latitude, loc.longitude), p))
+            end_lat, end_lon = nearest
+        elif s.pfz_result:
             dest = s.pfz_result[0]
             end_lat, end_lon = dest.latitude, dest.longitude
         else:
@@ -532,7 +560,7 @@ async def run_orca(request: ChatRequest) -> ChatResponse:
         query=request.query,
         language=request.language,
         location=Coordinates(latitude=request.latitude, longitude=request.longitude)
-        if request.latitude and request.longitude else None,
+        if request.latitude is not None and request.longitude is not None else None,
         trace=AgentTrace(request_id=request_id, stages=[]),
     )
 

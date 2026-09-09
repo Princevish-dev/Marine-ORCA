@@ -5,9 +5,9 @@ from shapely.ops import nearest_points
 from app.models import BoundaryStatus, RoutePoint, RouteResult
 
 _IMBL_DEMO = Polygon([
-    (78.0, 8.0), (80.0, 8.0), (82.0, 10.0),
-    (82.5, 13.0), (81.5, 16.0), (80.0, 18.0),
-    (78.0, 18.0), (77.0, 14.0), (77.5, 10.0), (78.0, 8.0)
+    (83.0, 8.0), (85.0, 8.0), (87.0, 10.0),
+    (87.5, 13.0), (86.5, 16.0), (85.0, 18.0),
+    (83.0, 18.0), (82.0, 14.0), (82.5, 10.0), (83.0, 8.0)
 ])
 
 _EEZ_DEMO = Polygon([

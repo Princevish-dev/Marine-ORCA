@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
+from app.api.auth import require_api_user
 from app.services.data_providers import fetch_weather, fetch_marine, fetch_ocean_observation
 from app.geospatial.engine import check_boundary_status, generate_pfz_candidates, get_geofence_geojson
 from app.routing.astar import build_route_grid
@@ -7,7 +8,7 @@ router = APIRouter()
 
 
 @router.get("/marine")
-async def marine_data(lat: float = Query(13.0827, ge=-90, le=90), lon: float = Query(80.2707, ge=-180, le=180)):
+async def marine_data(lat: float = Query(13.0827, ge=-90, le=90), lon: float = Query(80.2707, ge=-180, le=180), _user: dict = Depends(require_api_user)):
     marine = await fetch_marine(lat, lon)
     weather = await fetch_weather(lat, lon)
     ocean = await fetch_ocean_observation(lat, lon)
@@ -15,14 +16,14 @@ async def marine_data(lat: float = Query(13.0827, ge=-90, le=90), lon: float = Q
 
 
 @router.get("/pfz")
-async def pfz_data(lat: float = Query(13.0827, ge=-90, le=90), lon: float = Query(80.2707, ge=-180, le=180)):
+async def pfz_data(lat: float = Query(13.0827, ge=-90, le=90), lon: float = Query(80.2707, ge=-180, le=180), _user: dict = Depends(require_api_user)):
     ocean = await fetch_ocean_observation(lat, lon)
     candidates = generate_pfz_candidates(lat, lon, ocean.sst_celsius, ocean.chlorophyll_mgm3)
     return {"candidates": candidates, "source": ocean.source}
 
 
 @router.get("/layers")
-async def map_layers():
+async def map_layers(_user: dict = Depends(require_api_user)):
     geofence = get_geofence_geojson()
     return {"geofence": geofence}
 
@@ -33,6 +34,7 @@ async def calculate_route(
     start_lon: float = Query(80.2707, ge=-180, le=180),
     end_lat: float = Query(12.85, ge=-90, le=90),
     end_lon: float = Query(80.45, ge=-180, le=180),
+    _user: dict = Depends(require_api_user),
 ):
     marine = await fetch_marine(start_lat, start_lon)
     route = build_route_grid(

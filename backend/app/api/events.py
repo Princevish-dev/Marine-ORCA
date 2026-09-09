@@ -1,11 +1,15 @@
 from __future__ import annotations
 import asyncio
 import json
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException, Depends
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from fastapi.responses import StreamingResponse
 from app.guardian.guardian import event_bus, trigger_test_alert, get_guardian_status
+from app.api.auth import require_api_user
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 async def _event_stream(request: Request):
@@ -43,12 +47,16 @@ async def sse_events(request: Request):
 
 
 @router.post("/alerts/test")
-async def trigger_test(request: Request):
+@limiter.limit("5/minute")
+async def trigger_test(request: Request, _user: dict = Depends(require_api_user)):
+    from app.config import settings
+    if not settings.demo_mode:
+        raise HTTPException(status_code=404, detail="Test alerts are available only in demo mode")
     alert = await trigger_test_alert()
     return {"status": "ok", "alert_id": alert.id}
 
 
 @router.get("/alerts")
-async def get_alerts():
+async def get_alerts(_user: dict = Depends(require_api_user)):
     alerts = event_bus.get_recent_alerts()
     return {"alerts": [a.model_dump() for a in alerts], "guardian": get_guardian_status()}
