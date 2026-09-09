@@ -1,4 +1,3 @@
-"""Tests for ORCA deterministic components."""
 import pytest
 from datetime import datetime, timezone
 
@@ -37,23 +36,22 @@ def _warning(severity="YELLOW", title="Test", source="test"):
     )
 
 
-# ── Safety ────────────────────────────────────────────────────────────────────
 class TestSafety:
     def test_calm_conditions_high_score(self):
         s = calculate_safety(_weather(wind=10), _marine(wave=0.8), [], None, [])
-        assert s.score >= 80, "Calm conditions should yield high score"
+        assert s.score >= 80
 
     def test_high_wind_reduces_score(self):
         s = calculate_safety(_weather(wind=50), _marine(wave=0.8), [], None, [])
-        assert s.score < 80, "High wind should lower score"
+        assert s.score < 80
 
     def test_high_waves_reduce_score(self):
         s = calculate_safety(_weather(wind=10), _marine(wave=3.0), [], None, [])
-        assert s.score < 75, "High waves should lower score"
+        assert s.score < 75
 
     def test_red_warning_triggers_critical(self):
         s = calculate_safety(_weather(wind=10), _marine(wave=0.5), [_warning("RED", "Cyclone Alert")], None, [])
-        assert s.score <= 30, "RED warning must force critical override"
+        assert s.score <= 30
         assert s.critical_override is True
 
     def test_pfz_bonus_added(self):
@@ -63,7 +61,7 @@ class TestSafety:
         )]
         s_no_pfz = calculate_safety(_weather(wind=10), _marine(wave=0.8), [], None, [])
         s_pfz = calculate_safety(_weather(wind=10), _marine(wave=0.8), [], None, pfz)
-        assert s_pfz.score >= s_no_pfz.score, "PFZ bonus should increase score"
+        assert s_pfz.score >= s_no_pfz.score
 
     def test_pfz_bonus_does_not_override_red_warning(self):
         pfz = [PFZCandidate(
@@ -71,11 +69,10 @@ class TestSafety:
             explanation="test", suitability="HIGH",
         )]
         s = calculate_safety(_weather(wind=10), _marine(wave=0.5), [_warning("RED", "Cyclone")], None, pfz)
-        assert s.score <= 30, "Critical override must not be bypassed by PFZ"
+        assert s.score <= 30
         assert s.critical_override is True
 
 
-# ── Alert predicates ──────────────────────────────────────────────────────────
 class TestAlertPredicates:
     def test_is_high_wave_true(self):
         assert is_high_wave(_marine(wave=WAVE_HIGH_THRESHOLD + 0.1))
@@ -99,36 +96,31 @@ class TestAlertPredicates:
         assert not is_cyclone([_warning("RED", "High wave warning")])
 
 
-# ── Geospatial ────────────────────────────────────────────────────────────────
 class TestGeospatial:
     def test_haversine_known(self):
-        # Chennai to Mumbai approx 1062 km
         d = haversine_km(13.0827, 80.2707, 18.9388, 72.8355)
-        assert 1000 < d < 1200, f"Expected ~1062 km, got {d}"
+        assert 1000 < d < 1200
 
     def test_haversine_zero(self):
         assert haversine_km(13.0, 80.0, 13.0, 80.0) == 0.0
 
     def test_boundary_normal_far_away(self):
-        # Far away from any zone
         b = check_boundary_status(0.0, 60.0)
         assert b.status == "NORMAL"
 
     def test_boundary_normal_chennai(self):
         b = check_boundary_status(13.0827, 80.2707)
-        # Chennai should be outside restricted zone
         assert not b.inside
 
     def test_pfz_score_optimal(self):
         score = calculate_pfz_score(sst=27.5, chlorophyll=1.5)
-        assert score >= 70, "Optimal conditions should score high"
+        assert score >= 70
 
     def test_pfz_score_low(self):
         score = calculate_pfz_score(sst=20.0, chlorophyll=0.1)
-        assert score < 40, "Poor conditions should score low"
+        assert score < 40
 
 
-# ── Routing (import only — no network) ───────────────────────────────────────
 class TestRouting:
     def test_route_returns_result(self):
         from app.routing.astar import build_route_grid
@@ -141,4 +133,4 @@ class TestRouting:
     def test_route_orca_risk_lower(self):
         from app.routing.astar import build_route_grid
         route = build_route_grid(13.0, 80.0, 13.5, 80.5, wave_height=2.5)
-        assert route.orca_risk <= route.direct_risk, "ORCA route risk should be <= direct route risk"
+        assert route.orca_risk <= route.direct_risk

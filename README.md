@@ -57,6 +57,9 @@ LLM:      Google Gemini 1.5 Flash — interpretation + explanation only
 | Agent trace (expandable) | ✅ | Per-stage timing + source |
 | Voice I/O | ✅ | Browser Web Speech API |
 | Interactive marine map (Leaflet) | ✅ | PFZ, route, geofence layers |
+| Supabase Auth (Email + Google OAuth) | ✅ | Protected dashboard |
+| User Profiles (vessel, captain) | ✅ | Supabase Postgres + RLS |
+| ISRO EO Data Loader | ✅ | CSV ingestion for SST/Chl |
 | Demo mode (fixture data) | ✅ | Clearly labelled |
 
 ---
@@ -81,24 +84,30 @@ LLM:      Google Gemini 1.5 Flash — interpretation + explanation only
 
 ```
 orca/
-├── frontend/              # Next.js 14 + TypeScript + Tailwind
+├── frontend/              
 │   └── src/
-│       ├── app/           # Next.js App Router
-│       ├── components/    # All React components
-│       ├── hooks/         # useVoice
-│       ├── lib/           # API client, constants
-│       └── types/         # TypeScript types
+│       ├── app/           
+│       │   ├── login/     
+│       │   └── profile/   
+│       ├── components/    
+│       ├── hooks/         
+│       ├── lib/           
+│       └── types/         
 │
 ├── backend/
 │   └── app/
-│       ├── agents/        # LangGraph orchestrator
-│       ├── api/           # FastAPI endpoints
-│       ├── geospatial/    # Shapely geospatial engine
-│       ├── guardian/      # Background monitoring + SSE
-│       ├── models/        # Pydantic models
-│       ├── routing/       # A* hydrodynamic router
-│       └── services/      # Data providers, safety, demo fixtures
+│       ├── agents/        
+│       ├── api/           
+│       ├── geospatial/    
+│       ├── guardian/      
+│       ├── models/        
+│       ├── routing/       
+│       └── services/      
+│   └── data/
+│       └── isro/          
 │
+├── supabase/
+│   └── schema.sql         
 ├── .env.example
 ├── docker-compose.yml
 └── README.md
@@ -118,19 +127,13 @@ orca/
 ```bash
 cd orca/backend
 
-# Create .env from template
 copy .env.example .env
-# Edit .env: set GEMINI_API_KEY
 
-# Create virtual environment
 python -m venv venv
-venv\Scripts\activate         # Windows
-# source venv/bin/activate    # Linux/Mac
+venv\Scripts\activate
 
-# Install dependencies
 pip install -r requirements.txt
 
-# Run
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -142,10 +145,8 @@ API docs at **http://localhost:8000/docs**
 ```bash
 cd orca/frontend
 
-# Install dependencies
 npm install
 
-# Run dev server
 npm run dev
 ```
 
@@ -154,9 +155,8 @@ Frontend starts at **http://localhost:3000**
 ### Demo Mode (no live APIs)
 
 ```bash
-# In backend/.env
 DEMO_MODE=true
-GUARDIAN_INTERVAL_SECONDS=15   # Fast for demo
+GUARDIAN_INTERVAL_SECONDS=15
 ```
 
 ---
@@ -226,6 +226,9 @@ Critical:
 - `GEMINI_API_KEY` — LLM (get free at aistudio.google.com)
 - `DEMO_MODE=true` — use fixture data (no live APIs needed)
 - `GUARDIAN_INTERVAL_SECONDS=15` — fast guardian for demo
+- `NEXT_PUBLIC_SUPABASE_URL` — your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — your Supabase anon key
+- `ISRO_DATA_DIR=data/isro` — path to downloaded ISRO CSV data
 
 ---
 
