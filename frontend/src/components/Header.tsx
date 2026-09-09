@@ -1,14 +1,17 @@
 'use client';
 
-import { Activity, Shield, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
+import { Activity, Shield, Wifi, WifiOff, AlertTriangle, User, LogOut } from 'lucide-react';
+import Link from 'next/link';
 
 interface HeaderProps {
   guardianStatus: 'ACTIVE' | 'DEGRADED' | 'OFFLINE';
   lastScan?: string;
   demoMode?: boolean;
+  user?: any;
+  onLogout?: () => void;
 }
 
-export default function Header({ guardianStatus, lastScan, demoMode }: HeaderProps) {
+export default function Header({ guardianStatus, lastScan, demoMode, user, onLogout }: HeaderProps) {
   const statusConfig = {
     ACTIVE: { color: 'text-emerald-400', dot: 'bg-emerald-400', label: 'GUARDIAN ACTIVE', icon: Wifi },
     DEGRADED: { color: 'text-yellow-400', dot: 'bg-yellow-400', label: 'DEGRADED', icon: AlertTriangle },
@@ -19,9 +22,7 @@ export default function Header({ guardianStatus, lastScan, demoMode }: HeaderPro
 
   return (
     <header className="glass-card-dark border-b border-cyan-500/10 px-6 py-3 flex items-center justify-between z-10 relative">
-      {/* Brand */}
       <div className="flex items-center gap-4">
-        {/* Logo mark */}
         <div className="relative w-9 h-9 flex-shrink-0">
           <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-600 opacity-20 animate-pulse-slow" />
           <div className="absolute inset-0 rounded-lg border border-cyan-500/40 flex items-center justify-center">
@@ -44,7 +45,6 @@ export default function Header({ guardianStatus, lastScan, demoMode }: HeaderPro
         </div>
       </div>
 
-      {/* Centre: system status */}
       <div className="hidden md:flex items-center gap-6">
         <div className="flex items-center gap-2">
           <span className="status-dot bg-emerald-400" />
@@ -59,7 +59,6 @@ export default function Header({ guardianStatus, lastScan, demoMode }: HeaderPro
         )}
       </div>
 
-      {/* Right: Guardian status */}
       <div className="flex items-center gap-4">
         <div className="hidden sm:flex flex-col items-end">
           <div className={`flex items-center gap-1.5 ${statusConfig.color}`}>
@@ -78,6 +77,24 @@ export default function Header({ guardianStatus, lastScan, demoMode }: HeaderPro
           <Shield className="w-3.5 h-3.5 text-cyan-400" />
           <span className="text-xs text-slate-300 font-medium">SIH 2026</span>
         </div>
+
+        {user ? (
+          <div className="flex items-center gap-3 border-l border-slate-700 pl-4 ml-2">
+            <Link href="/profile" className="flex items-center gap-2 text-xs text-slate-300 hover:text-cyan-400 transition-colors">
+              <User className="w-4 h-4" />
+              <span>Profile</span>
+            </Link>
+            <button onClick={onLogout} className="text-xs text-slate-500 hover:text-red-400 transition-colors">
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 border-l border-slate-700 pl-4 ml-2">
+            <Link href="/login" className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-semibold">
+              Sign In
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   );

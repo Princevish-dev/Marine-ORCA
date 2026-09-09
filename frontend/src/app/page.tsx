@@ -11,6 +11,8 @@ import RouteComparison from '@/components/RouteComparison';
 import { AlertStack, GeofenceAlertCard } from '@/components/AlertComponents';
 import { createSSEConnection, triggerTestAlert, fetchHealth } from '@/lib/api';
 import type { ChatResponse, AlertEvent, SafetyAssessment, EvidenceItem, MapData, PFZCandidate, RouteResult } from '@/types';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 // Dynamic map import (Leaflet needs browser)
 const MarineMap = dynamic(() => import('@/components/MarineMap'), {
@@ -26,11 +28,12 @@ const MarineMap = dynamic(() => import('@/components/MarineMap'), {
 });
 
 export default function DashboardPage() {
-  // Guardian state
   const [guardianStatus, setGuardianStatus] = useState<'ACTIVE' | 'DEGRADED' | 'OFFLINE'>('OFFLINE');
   const [lastScan, setLastScan] = useState<string>('');
   const [demoMode, setDemoMode] = useState(false);
   const sseRef = useRef<EventSource | null>(null);
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
 
   // Alerts
   const [activeAlerts, setActiveAlerts] = useState<AlertEvent[]>([]);
@@ -62,7 +65,26 @@ export default function DashboardPage() {
     if (resp.is_demo) setDemoMode(true);
   }, []);
 
-  // Health check
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push('/login');
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.push('/login');
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
   useEffect(() => {
     fetchHealth()
       .then((h) => {
@@ -116,11 +138,14 @@ export default function DashboardPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--navy-950)' }}>
-      {/* Header */}
       <Header
         guardianStatus={guardianStatus}
         lastScan={lastScan || undefined}
         demoMode={demoMode}
+        user={user}
+        onLogout={async () => {
+          await supabase.auth.signOut();
+        }}
       />
 
       {/* Main content */}
