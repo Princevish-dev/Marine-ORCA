@@ -9,13 +9,12 @@ import { sendChatMessage } from '@/lib/api';
 import { useVoice } from '@/hooks/useVoice';
 import type { ChatMessage, ChatResponse, Language } from '@/types';
 
-interface ChatPanelProps {
+interface Chatpanelprops {
   onResponse?: (response: ChatResponse) => void;
   defaultLat?: number;
   defaultLon?: number;
 }
 
-// Stage messages for progressive loading display
 const LOADING_STAGES = [
   'Fetching Marine Data...',
   'Analysing Weather...',
@@ -25,7 +24,7 @@ const LOADING_STAGES = [
   'Generating Response...',
 ];
 
-function ThinkingBubble({ stage }: { stage: string }) {
+function Thinkingbubble({ Stage }: { Stage: string }) {
   return (
     <div className="flex items-start gap-3 animate-fade-in">
       <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center flex-shrink-0 mt-1">
@@ -38,78 +37,73 @@ function ThinkingBubble({ stage }: { stage: string }) {
         </div>
         <div>
           <p className="text-cyan-400 text-xs font-semibold tracking-wide">Thinking...</p>
-          <p className="text-slate-400 text-[11px] mt-0.5 animate-pulse">{stage}</p>
+          <p className="text-slate-400 text-[11px] mt-0.5 animate-pulse">{Stage}</p>
         </div>
       </div>
     </div>
   );
 }
 
-function UserMessage({ msg }: { msg: ChatMessage }) {
+function Usermessage({ Msg }: { Msg: ChatMessage }) {
   return (
     <div className="flex items-end gap-2 justify-end animate-slide-up">
       <div className="chat-bubble-user">
-        <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+        <p className="leading-relaxed whitespace-pre-wrap">{Msg.content}</p>
         <p className="text-[10px] text-white/50 mt-1">
-          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          {Msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </p>
       </div>
     </div>
   );
 }
 
-function AssistantMessage({ msg }: { msg: ChatMessage }) {
-  const r = msg.response;
-  const isDemo = r?.is_demo;
+function Assistantmessage({ Msg }: { Msg: ChatMessage }) {
+  const R = Msg.response;
+  const Isdemo = R?.is_demo;
 
   return (
     <div className="flex items-start gap-3 animate-slide-up">
-      {/* Avatar */}
       <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center flex-shrink-0 mt-1">
         <span className="text-white text-xs font-bold">O</span>
       </div>
 
       <div className="flex flex-col gap-2 min-w-0 flex-1">
-        {/* Demo banner */}
-        {isDemo && (
+        {Isdemo && (
           <div className="flex items-center gap-1.5 text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1.5">
             <AlertTriangle className="w-3 h-3" />
             <span className="font-semibold">DEMO DATA — Not live observation</span>
           </div>
         )}
 
-        {/* Main answer bubble */}
         <div className="chat-bubble-assistant">
-          <p className="leading-relaxed whitespace-pre-wrap text-slate-200">{msg.content}</p>
+          <p className="leading-relaxed whitespace-pre-wrap text-slate-200">{Msg.content}</p>
           <p className="text-[10px] text-slate-600 mt-2">
-            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            {r?.request_id && <span className="ml-2 font-mono">#{r.request_id}</span>}
+            {Msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {R?.request_id && <span className="ml-2 font-mono">#{R.request_id}</span>}
           </p>
         </div>
 
-        {/* Critic conflict */}
-        {r?.critic?.has_conflict && r.critic.conflicts.length > 0 && (
+        {R?.critic?.has_conflict && R.critic.conflicts.length > 0 && (
           <CriticConflictCard
             hasConflict
-            sourceA={r.critic.conflicts[0].source_a}
-            valueA={r.critic.conflicts[0].source_a_value}
-            sourceB={r.critic.conflicts[0].source_b}
-            valueB={r.critic.conflicts[0].source_b_value}
-            resolution={r.critic.conflicts[0].resolution}
+            sourceA={R.critic.conflicts[0].source_a}
+            valueA={R.critic.conflicts[0].source_a_value}
+            sourceB={R.critic.conflicts[0].source_b}
+            valueB={R.critic.conflicts[0].source_b_value}
+            resolution={R.critic.conflicts[0].resolution}
           />
         )}
 
-        {/* Agent trace */}
-        {r?.trace && (
-          <AgentTraceView trace={r.trace} />
+        {R?.trace && (
+          <AgentTraceView trace={R.trace} />
         )}
       </div>
     </div>
   );
 }
 
-export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon = 80.2707 }: ChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
+export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon = 80.2707 }: Chatpanelprops) {
+  const [Messages, Setmessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       role: 'system',
@@ -117,130 +111,124 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
       timestamp: new Date(),
     },
   ]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingStage, setLoadingStage] = useState('');
-  const [language, setLanguage] = useState<Language>(LANGUAGES[0]);
-  const [showLangMenu, setShowLangMenu] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const stageTimerRef = useRef<NodeJS.Timeout>();
-  const stageIdx = useRef(0);
+  const [Input, Setinput] = useState('');
+  const [Isloading, Setisloading] = useState(false);
+  const [Loadingstage, Setloadingstage] = useState('');
+  const [Lang, Setlang] = useState<Language>(LANGUAGES[0]);
+  const [Showlangmenu, Setshowlangmenu] = useState(false);
+  const BottomRef = useRef<HTMLDivElement>(null);
+  const StagetimerRef = useRef<NodeJS.Timeout>();
+  const StageidxRef = useRef(0);
 
-  const { isListening, transcript, isSpeaking, startListening, stopListening, speak, stopSpeaking, supported: voiceSupported } = useVoice();
+  const { isListening, transcript, isSpeaking, startListening, stopListening, speak, stopSpeaking, supported: Voicesupported } = useVoice();
 
-  // Sync voice transcript to input
   useEffect(() => {
-    if (transcript) setInput(transcript);
+    if (transcript) Setinput(transcript);
   }, [transcript]);
 
-  // Auto-scroll
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+    BottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [Messages, Isloading]);
 
-  // Cycling loading stages for UX
-  const startLoadingCycle = () => {
-    stageIdx.current = 0;
-    setLoadingStage(LOADING_STAGES[0]);
-    stageTimerRef.current = setInterval(() => {
-      stageIdx.current = (stageIdx.current + 1) % LOADING_STAGES.length;
-      setLoadingStage(LOADING_STAGES[stageIdx.current]);
+  const Startloadingcycle = () => {
+    StageidxRef.current = 0;
+    Setloadingstage(LOADING_STAGES[0]);
+    StagetimerRef.current = setInterval(() => {
+      StageidxRef.current = (StageidxRef.current + 1) % LOADING_STAGES.length;
+      Setloadingstage(LOADING_STAGES[StageidxRef.current]);
     }, 1400);
   };
 
-  const stopLoadingCycle = () => {
-    if (stageTimerRef.current) clearInterval(stageTimerRef.current);
-    setLoadingStage('');
+  const Stoploadingcycle = () => {
+    if (StagetimerRef.current) clearInterval(StagetimerRef.current);
+    Setloadingstage('');
   };
 
-  const handleSend = useCallback(async (queryOverride?: string) => {
-    const q = (queryOverride ?? input).trim();
-    if (!q || isLoading) return;
+  const Handlesend = useCallback(async (Queryoverride?: string) => {
+    const Q = (Queryoverride ?? Input).trim();
+    if (!Q || Isloading) return;
 
-    const userMsg: ChatMessage = {
+    const Usermsg: ChatMessage = {
       id: `u-${Date.now()}`,
       role: 'user',
-      content: q,
+      content: Q,
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
-    setInput('');
-    setIsLoading(true);
-    startLoadingCycle();
+    Setmessages((prev) => [...prev, Usermsg]);
+    Setinput('');
+    Setisloading(true);
+    Startloadingcycle();
 
     try {
-      const resp = await sendChatMessage({
-        query: q,
-        language: language.code,
+      const Resp = await sendChatMessage({
+        query: Q,
+        language: Lang.code,
         latitude: defaultLat,
         longitude: defaultLon,
       });
 
-      const assistMsg: ChatMessage = {
+      const Assistmsg: ChatMessage = {
         id: `a-${Date.now()}`,
         role: 'assistant',
-        content: resp.answer,
+        content: Resp.answer,
         timestamp: new Date(),
-        response: resp,
+        response: Resp,
       };
 
-      setMessages((prev) => [...prev, assistMsg]);
-      onResponse?.(resp);
+      Setmessages((prev) => [...prev, Assistmsg]);
+      onResponse?.(Resp);
 
-      // Auto-speak response
-      if (voiceSupported && resp.answer) {
-        speak(resp.answer, language.code);
+      if (Voicesupported && Resp.answer) {
+        speak(Resp.answer, Lang.code);
       }
     } catch (err) {
-      const errorMsg: ChatMessage = {
+      const Errormsg: ChatMessage = {
         id: `e-${Date.now()}`,
         role: 'assistant',
         content: 'ORCA could not complete the reasoning workflow. Please check the backend is running and retry.',
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, errorMsg]);
+      Setmessages((prev) => [...prev, Errormsg]);
     } finally {
-      setIsLoading(false);
-      stopLoadingCycle();
+      Setisloading(false);
+      Stoploadingcycle();
     }
-  }, [input, isLoading, language, defaultLat, defaultLon, onResponse, speak, voiceSupported]);
+  }, [Input, Isloading, Lang, defaultLat, defaultLon, onResponse, speak, Voicesupported]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const Handlekeydown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      Handlesend();
     }
   };
 
   return (
     <div className="flex flex-col h-full">
-      {/* Panel header */}
       <div className="px-4 py-3 border-b border-slate-800/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-cyan-400" />
           <span className="text-sm font-semibold text-slate-200">Conversational Assistant</span>
         </div>
-        {/* Language selector */}
         <div className="relative">
           <button
-            onClick={() => setShowLangMenu((v) => !v)}
+            onClick={() => Setshowlangmenu((v) => !v)}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/60 border border-slate-700/50 hover:border-cyan-500/30 transition-colors"
           >
             <Globe className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-xs text-slate-300">{language.nativeLabel}</span>
+            <span className="text-xs text-slate-300">{Lang.nativeLabel}</span>
           </button>
-          {showLangMenu && (
+          {Showlangmenu && (
             <div className="absolute right-0 top-8 z-50 glass-card-dark border border-cyan-500/15 rounded-xl p-1.5 w-44 shadow-xl animate-slide-up">
-              {LANGUAGES.map((lang) => (
+              {LANGUAGES.map((Lg) => (
                 <button
-                  key={lang.code}
-                  onClick={() => { setLanguage(lang); setShowLangMenu(false); }}
+                  key={Lg.code}
+                  onClick={() => { Setlang(Lg); Setshowlangmenu(false); }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex justify-between
-                    ${language.code === lang.code ? 'bg-cyan-500/15 text-cyan-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'}`}
+                    ${Lang.code === Lg.code ? 'bg-cyan-500/15 text-cyan-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'}`}
                 >
-                  <span>{lang.label}</span>
-                  <span className="text-slate-500">{lang.nativeLabel}</span>
+                  <span>{Lg.label}</span>
+                  <span className="text-slate-500">{Lg.nativeLabel}</span>
                 </button>
               ))}
             </div>
@@ -248,9 +236,7 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* Welcome */}
         <div className="text-center py-4 animate-fade-in">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-600/20 border border-cyan-500/20 mb-3">
             <span className="text-2xl">🌊</span>
@@ -259,59 +245,54 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
           <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
             Ask anything about marine safety, fishing zones, weather, or routes. I&apos;ll reason across real data and explain my findings.
           </p>
-          {/* Quick demo buttons */}
           <div className="mt-4 flex flex-wrap gap-2 justify-center">
-            {DEMO_QUERIES.map((dq) => (
+            {DEMO_QUERIES.map((Dq) => (
               <button
-                key={dq.query}
-                onClick={() => handleSend(dq.query)}
-                disabled={isLoading}
+                key={Dq.query}
+                onClick={() => Handlesend(Dq.query)}
+                disabled={Isloading}
                 className="text-[11px] px-3 py-1.5 rounded-full border border-cyan-500/20 text-cyan-400/70 hover:border-cyan-500/50 hover:text-cyan-400 transition-all bg-cyan-500/5 hover:bg-cyan-500/10 disabled:opacity-40"
               >
-                {dq.label}
+                {Dq.label}
               </button>
             ))}
           </div>
         </div>
 
-        {messages.filter((m) => m.role !== 'system').map((msg) =>
-          msg.role === 'user' ? (
-            <UserMessage key={msg.id} msg={msg} />
+        {Messages.filter((m) => m.role !== 'system').map((Msg) =>
+          Msg.role === 'user' ? (
+            <Usermessage key={Msg.id} Msg={Msg} />
           ) : (
-            <AssistantMessage key={msg.id} msg={msg} />
+            <Assistantmessage key={Msg.id} Msg={Msg} />
           )
         )}
 
-        {/* Loading bubble */}
-        {isLoading && <ThinkingBubble stage={loadingStage} />}
+        {Isloading && <Thinkingbubble Stage={Loadingstage} />}
 
-        <div ref={bottomRef} />
+        <div ref={BottomRef} />
       </div>
 
-      {/* Input area */}
       <div className="border-t border-slate-800/60 p-4">
         <div className="flex items-end gap-2">
-          {/* Text input */}
           <div className="flex-1 relative">
             <textarea
               id="chat-input"
               rows={1}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
+              value={Input}
+              onChange={(e) => Setinput(e.target.value)}
+              onKeyDown={Handlekeydown}
               placeholder="Ask ORCA anything about the sea..."
-              disabled={isLoading}
+              disabled={Isloading}
               className="w-full bg-slate-800/50 border border-slate-700/50 hover:border-cyan-500/30 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 resize-none outline-none transition-colors leading-relaxed disabled:opacity-50"
               style={{ maxHeight: 120 }}
             />
           </div>
 
-          {/* Voice */}
-          {voiceSupported && (
+          {Voicesupported && (
             <button
               id="voice-btn"
-              onClick={() => isListening ? stopListening() : startListening(language.code)}
-              disabled={isLoading}
+              onClick={() => isListening ? stopListening() : startListening(Lang.code)}
+              disabled={Isloading}
               className={`p-3 rounded-xl border transition-all flex-shrink-0 ${
                 isListening
                   ? 'bg-red-500/20 border-red-500/40 text-red-400 animate-pulse'
@@ -323,8 +304,7 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
             </button>
           )}
 
-          {/* TTS toggle */}
-          {voiceSupported && (
+          {Voicesupported && (
             <button
               onClick={() => isSpeaking ? stopSpeaking() : undefined}
               className={`p-3 rounded-xl border transition-all flex-shrink-0 ${
@@ -338,11 +318,10 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
             </button>
           )}
 
-          {/* Send */}
           <button
             id="send-btn"
-            onClick={() => handleSend()}
-            disabled={isLoading || !input.trim()}
+            onClick={() => Handlesend()}
+            disabled={Isloading || !Input.trim()}
             className="p-3 rounded-xl border border-cyan-500/40 bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 hover:border-cyan-400 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
             title="Send message"
           >

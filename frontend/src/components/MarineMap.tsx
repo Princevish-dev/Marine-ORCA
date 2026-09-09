@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { MapData, GeoJSONFeatureCollection } from '@/types';
 import { Layers, MapPin, Fish, Route as RouteIcon, Shield } from 'lucide-react';
 
-interface MarineMapProps {
+interface Marinemapprops {
   mapData?: MapData;
   geofenceGeoJSON?: GeoJSONFeatureCollection;
 }
@@ -16,21 +16,18 @@ const LAYER_DEFS = [
   { id: 'waves', label: 'Wave Indicators', icon: '🌊' },
 ];
 
-export default function MarineMap({ mapData, geofenceGeoJSON }: MarineMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const leafletMapRef = useRef<any>(null);
-  const layersRef = useRef<Record<string, any>>({});
-  const [activeLayers, setActiveLayers] = useState<Set<string>>(new Set(['geofence']));
-  const [mapReady, setMapReady] = useState(false);
-  const [clickInfo, setClickInfo] = useState<{ lat: number; lng: number } | null>(null);
+export default function MarineMap({ mapData, geofenceGeoJSON }: Marinemapprops) {
+  const MapRef = useRef<HTMLDivElement>(null);
+  const LeafletmapRef = useRef<any>(null);
+  const LayersRef = useRef<Record<string, any>>({});
+  const [Activelayers, Setactivelayers] = useState<Set<string>>(new Set(['geofence']));
+  const [Mapready, Setmapready] = useState(false);
+  const [Clickinfo, Setclickinfo] = useState<{ lat: number; lng: number } | null>(null);
 
-  // ── Initialize Leaflet ────────────────────────────────────────────────────
   useEffect(() => {
-    if (typeof window === 'undefined' || leafletMapRef.current) return;
+    if (typeof window === 'undefined' || LeafletmapRef.current) return;
 
-    // Dynamically import Leaflet
     import('leaflet').then((L) => {
-      // Fix default icons
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -38,137 +35,129 @@ export default function MarineMap({ mapData, geofenceGeoJSON }: MarineMapProps) 
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       });
 
-      const map = L.map(mapRef.current!, {
+      const Map = L.map(MapRef.current!, {
         center: [13.0827, 80.2707],
         zoom: 7,
         zoomControl: true,
       });
 
-      // Dark ocean-style tiles
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap',
         maxZoom: 18,
-      }).addTo(map);
+      }).addTo(Map);
 
-      // Grid lines layer (ocean grid)
-      const gridLines: any[] = [];
-      for (let lat = 8; lat <= 22; lat += 2) {
-        gridLines.push(
-          L.polyline([[lat, 70], [lat, 90]], {
+      const Gridlines: any[] = [];
+      for (let Lat = 8; Lat <= 22; Lat += 2) {
+        Gridlines.push(
+          L.polyline([[Lat, 70], [Lat, 90]], {
             color: 'rgba(6,182,212,0.08)', weight: 1, dashArray: '4,8',
-          }).addTo(map)
+          }).addTo(Map)
         );
       }
-      for (let lon = 70; lon <= 90; lon += 2) {
-        gridLines.push(
-          L.polyline([[8, lon], [22, lon]], {
+      for (let Lon = 70; Lon <= 90; Lon += 2) {
+        Gridlines.push(
+          L.polyline([[8, Lon], [22, Lon]], {
             color: 'rgba(6,182,212,0.08)', weight: 1, dashArray: '4,8',
-          }).addTo(map)
+          }).addTo(Map)
         );
       }
 
-      // Click handler
-      map.on('click', (e: any) => {
-        setClickInfo({ lat: +e.latlng.lat.toFixed(4), lng: +e.latlng.lng.toFixed(4) });
+      Map.on('click', (e: any) => {
+        Setclickinfo({ lat: +e.latlng.lat.toFixed(4), lng: +e.latlng.lng.toFixed(4) });
       });
 
-      leafletMapRef.current = map;
-      (window as any).__leafletMap = map;
+      LeafletmapRef.current = Map;
+      (window as any).__leafletMap = Map;
       (window as any).__L = L;
-      setMapReady(true);
+      Setmapready(true);
     });
 
     return () => {
-      if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
-        leafletMapRef.current = null;
+      if (LeafletmapRef.current) {
+        LeafletmapRef.current.remove();
+        LeafletmapRef.current = null;
       }
     };
   }, []);
 
-  // ── Sync map data ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!mapReady || !mapData) return;
-    const map = leafletMapRef.current;
+    if (!Mapready || !mapData) return;
+    const Map = LeafletmapRef.current;
     const L = (window as any).__L;
-    if (!map || !L) return;
+    if (!Map || !L) return;
 
-    // User location marker
     if (mapData.user_location) {
-      if (layersRef.current['user']) {
-        map.removeLayer(layersRef.current['user']);
+      if (LayersRef.current['user']) {
+        Map.removeLayer(LayersRef.current['user']);
       }
-      const userIcon = L.divIcon({
+      const Usericon = L.divIcon({
         className: '',
         html: `<div style="width:16px;height:16px;border-radius:50%;background:#06b6d4;border:3px solid white;box-shadow:0 0 12px #06b6d488;"></div>`,
         iconSize: [16, 16],
         iconAnchor: [8, 8],
       });
-      layersRef.current['user'] = L.marker(
+      LayersRef.current['user'] = L.marker(
         [mapData.user_location.lat, mapData.user_location.lng],
-        { icon: userIcon }
+        { icon: Usericon }
       )
         .bindPopup('<b style="color:#06b6d4">📍 Your Location</b>')
-        .addTo(map);
-      map.setView([mapData.user_location.lat, mapData.user_location.lng], 8);
+        .addTo(Map);
+      Map.setView([mapData.user_location.lat, mapData.user_location.lng], 8);
     }
 
-    // PFZ markers
-    if (mapData.pfz_candidates?.length && activeLayers.has('pfz')) {
-      if (layersRef.current['pfz']) {
-        map.removeLayer(layersRef.current['pfz']);
+    if (mapData.pfz_candidates?.length && Activelayers.has('pfz')) {
+      if (LayersRef.current['pfz']) {
+        Map.removeLayer(LayersRef.current['pfz']);
       }
-      const group = L.layerGroup();
-      mapData.pfz_candidates.forEach((pfz: any) => {
-        const c = pfz.suitability === 'HIGH' ? '#22c55e' : pfz.suitability === 'MODERATE' ? '#eab308' : '#ef4444';
-        const icon = L.divIcon({
+      const Group = L.layerGroup();
+      mapData.pfz_candidates.forEach((Pfz: any) => {
+        const C = Pfz.suitability === 'HIGH' ? '#22c55e' : Pfz.suitability === 'MODERATE' ? '#eab308' : '#ef4444';
+        const Icon = L.divIcon({
           className: '',
-          html: `<div style="width:22px;height:22px;border-radius:50%;background:${c};opacity:0.85;border:2px solid white;box-shadow:0 0 8px ${c}88;display:flex;align-items:center;justify-content:center;font-size:11px;">🐟</div>`,
+          html: `<div style="width:22px;height:22px;border-radius:50%;background:${C};opacity:0.85;border:2px solid white;box-shadow:0 0 8px ${C}88;display:flex;align-items:center;justify-content:center;font-size:11px;">🐟</div>`,
           iconSize: [22, 22],
           iconAnchor: [11, 11],
         });
-        L.marker([pfz.lat, pfz.lng], { icon })
+        L.marker([Pfz.lat, Pfz.lng], { icon: Icon })
           .bindPopup(
             `<div style="color:#e2e8f0;font-family:Inter,sans-serif;min-width:160px">
-              <b style="color:${c}">PFZ Candidate</b><br/>
-              Score: <b>${pfz.score}/100</b><br/>
-              Suitability: ${pfz.suitability}
+              <b style="color:${C}">PFZ Candidate</b><br/>
+              Score: <b>${Pfz.score}/100</b><br/>
+              Suitability: ${Pfz.suitability}
             </div>`
           )
-          .addTo(group);
+          .addTo(Group);
       });
-      layersRef.current['pfz'] = group.addTo(map);
-    } else if (!activeLayers.has('pfz') && layersRef.current['pfz']) {
-      map.removeLayer(layersRef.current['pfz']);
+      LayersRef.current['pfz'] = Group.addTo(Map);
+    } else if (!Activelayers.has('pfz') && LayersRef.current['pfz']) {
+      Map.removeLayer(LayersRef.current['pfz']);
     }
 
-    // Routes
-    if (mapData.route_geojson && activeLayers.has('route')) {
-      if (layersRef.current['route']) map.removeLayer(layersRef.current['route']);
-      const group = L.layerGroup();
-      const direct = mapData.route_geojson.direct.map((p: any) => [p.lat, p.lng]);
-      const orca = mapData.route_geojson.orca.map((p: any) => [p.lat, p.lng]);
-      if (direct.length > 0)
-        L.polyline(direct, { color: '#94a3b8', weight: 2, dashArray: '6,8', opacity: 0.7 })
+    if (mapData.route_geojson && Activelayers.has('route')) {
+      if (LayersRef.current['route']) Map.removeLayer(LayersRef.current['route']);
+      const Group = L.layerGroup();
+      const Direct = mapData.route_geojson.direct.map((p: any) => [p.lat, p.lng]);
+      const Orca = mapData.route_geojson.orca.map((p: any) => [p.lat, p.lng]);
+      if (Direct.length > 0)
+        L.polyline(Direct, { color: '#94a3b8', weight: 2, dashArray: '6,8', opacity: 0.7 })
           .bindTooltip('Direct Route', { permanent: false })
-          .addTo(group);
-      if (orca.length > 0)
-        L.polyline(orca, { color: '#06b6d4', weight: 3, opacity: 0.9 })
+          .addTo(Group);
+      if (Orca.length > 0)
+        L.polyline(Orca, { color: '#06b6d4', weight: 3, opacity: 0.9 })
           .bindTooltip('ORCA Optimized Route', { permanent: false })
-          .addTo(group);
-      layersRef.current['route'] = group.addTo(map);
-    } else if (!activeLayers.has('route') && layersRef.current['route']) {
-      map.removeLayer(layersRef.current['route']);
+          .addTo(Group);
+      LayersRef.current['route'] = Group.addTo(Map);
+    } else if (!Activelayers.has('route') && LayersRef.current['route']) {
+      Map.removeLayer(LayersRef.current['route']);
     }
 
-    // Geofence
-    if (geofenceGeoJSON && activeLayers.has('geofence')) {
-      if (layersRef.current['geofence']) map.removeLayer(layersRef.current['geofence']);
-      const group = L.layerGroup();
-      geofenceGeoJSON.features.forEach((f: any) => {
-        if (f.geometry.type === 'Polygon') {
-          const coords = f.geometry.coordinates[0].map((c: number[]) => [c[1], c[0]]);
-          L.polygon(coords, {
+    if (geofenceGeoJSON && Activelayers.has('geofence')) {
+      if (LayersRef.current['geofence']) Map.removeLayer(LayersRef.current['geofence']);
+      const Group = L.layerGroup();
+      geofenceGeoJSON.features.forEach((F: any) => {
+        if (F.geometry.type === 'Polygon') {
+          const Coords = F.geometry.coordinates[0].map((c: number[]) => [c[1], c[0]]);
+          L.polygon(Coords, {
             color: '#f97316',
             weight: 2,
             opacity: 0.8,
@@ -176,66 +165,62 @@ export default function MarineMap({ mapData, geofenceGeoJSON }: MarineMapProps) 
             fillOpacity: 0.05,
             dashArray: '8,6',
           })
-            .bindPopup(`<b style="color:#f97316">⚠ ${f.properties.name}</b><br/><span style="color:#94a3b8;font-size:11px">${f.properties.description}</span>`)
-            .addTo(group);
+            .bindPopup(`<b style="color:#f97316">⚠ ${F.properties.name}</b><br/><span style="color:#94a3b8;font-size:11px">${F.properties.description}</span>`)
+            .addTo(Group);
         }
       });
-      layersRef.current['geofence'] = group.addTo(map);
-    } else if (!activeLayers.has('geofence') && layersRef.current['geofence']) {
-      map.removeLayer(layersRef.current['geofence']);
+      LayersRef.current['geofence'] = Group.addTo(Map);
+    } else if (!Activelayers.has('geofence') && LayersRef.current['geofence']) {
+      Map.removeLayer(LayersRef.current['geofence']);
     }
-  }, [mapData, geofenceGeoJSON, mapReady, activeLayers]);
+  }, [mapData, geofenceGeoJSON, Mapready, Activelayers]);
 
-  // Toggle layer
-  const toggleLayer = (id: string) => {
-    setActiveLayers((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+  const Togglelayer = (Id: string) => {
+    Setactivelayers((prev) => {
+      const Next = new Set(prev);
+      Next.has(Id) ? Next.delete(Id) : Next.add(Id);
+      return Next;
     });
   };
 
   return (
     <div className="relative w-full h-full flex flex-col">
-      {/* Layer control */}
       <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1.5">
         <div className="glass-card-dark rounded-xl p-2 border border-cyan-500/15 shadow-xl">
           <div className="flex items-center gap-1.5 mb-2 px-1">
             <Layers className="w-3 h-3 text-slate-500" />
             <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Layers</span>
           </div>
-          {LAYER_DEFS.map((l) => (
+          {LAYER_DEFS.map((Lyr) => (
             <button
-              key={l.id}
-              className={`layer-btn w-full text-left mb-1 ${activeLayers.has(l.id) ? 'active' : ''}`}
-              onClick={() => toggleLayer(l.id)}
+              key={Lyr.id}
+              className={`layer-btn w-full text-left mb-1 ${Activelayers.has(Lyr.id) ? 'active' : ''}`}
+              onClick={() => Togglelayer(Lyr.id)}
             >
-              {l.icon} {l.label}
+              {Lyr.icon} {Lyr.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Map container */}
-      <div ref={mapRef} className="flex-1 w-full rounded-b-xl" style={{ minHeight: 300 }} />
+      <div ref={MapRef} className="flex-1 w-full rounded-b-xl" style={{ minHeight: 300 }} />
 
-      {/* Click popup */}
-      {clickInfo && (
+      {Clickinfo && (
         <div className="absolute bottom-3 left-3 z-[1000] glass-card-dark border border-cyan-500/20 p-3 rounded-xl max-w-xs animate-slide-up">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-cyan-400 font-semibold flex items-center gap-1">
               <MapPin className="w-3 h-3" /> Selected Point
             </span>
             <button
-              onClick={() => setClickInfo(null)}
+              onClick={() => Setclickinfo(null)}
               className="text-slate-500 hover:text-slate-300 text-xs"
             >✕</button>
           </div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
             <span className="text-slate-500">Lat</span>
-            <span className="text-slate-200 font-mono">{clickInfo.lat}°</span>
+            <span className="text-slate-200 font-mono">{Clickinfo.lat}°</span>
             <span className="text-slate-500">Lon</span>
-            <span className="text-slate-200 font-mono">{clickInfo.lng}°</span>
+            <span className="text-slate-200 font-mono">{Clickinfo.lng}°</span>
             <span className="text-slate-500">Bay of Bengal</span>
             <span className="text-cyan-400">Indian Ocean</span>
           </div>
@@ -243,7 +228,7 @@ export default function MarineMap({ mapData, geofenceGeoJSON }: MarineMapProps) 
         </div>
       )}
 
-      {!mapReady && (
+      {!Mapready && (
         <div className="absolute inset-0 flex items-center justify-center bg-navy-900/80 rounded-b-xl z-10">
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />

@@ -2,19 +2,18 @@
 
 import type { RouteResult } from '@/types';
 
-interface RouteComparisonProps {
+interface Routecomparisonprops {
   route: RouteResult;
 }
 
-export default function RouteComparison({ route }: RouteComparisonProps) {
-  const distDelta = route.orca_distance_km - route.direct_distance_km;
+export default function RouteComparison({ route }: Routecomparisonprops) {
+  const Distdelta = route.orca_distance_km - route.direct_distance_km;
 
   return (
     <div className="glass-card p-4">
       <h3 className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-3">Route Comparison</h3>
 
       <div className="grid grid-cols-2 gap-3">
-        {/* Direct route */}
         <div className="rounded-lg p-3 border border-slate-600/30 bg-slate-800/30">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-4 h-0.5 bg-slate-400" style={{ borderTop: '2px dashed #94a3b8' }} />
@@ -29,7 +28,6 @@ export default function RouteComparison({ route }: RouteComparisonProps) {
           </div>
         </div>
 
-        {/* ORCA route */}
         <div className="rounded-lg p-3 border border-cyan-500/30 bg-cyan-500/5">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-4 h-0.5 bg-cyan-400" />
@@ -45,12 +43,11 @@ export default function RouteComparison({ route }: RouteComparisonProps) {
         </div>
       </div>
 
-      {/* Savings summary */}
       <div className="mt-3 grid grid-cols-3 gap-2">
         <div className="text-center p-2 rounded-lg bg-slate-800/40 border border-slate-700/30">
           <p className="text-[10px] text-slate-500 mb-1">Distance</p>
-          <p className={`text-xs font-bold ${distDelta > 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
-            +{distDelta.toFixed(1)} km
+          <p className={`text-xs font-bold ${Distdelta > 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
+            +{Distdelta.toFixed(1)} km
           </p>
         </div>
         <div className="text-center p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">

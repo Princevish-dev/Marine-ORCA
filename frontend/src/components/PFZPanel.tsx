@@ -2,11 +2,11 @@
 
 import type { PFZCandidate } from '@/types';
 
-interface PFZPanelProps {
+interface Pfzpanelprops {
   candidates: PFZCandidate[];
 }
 
-export default function PFZPanel({ candidates }: PFZPanelProps) {
+export default function PFZPanel({ candidates }: Pfzpanelprops) {
   if (!candidates || candidates.length === 0) {
     return (
       <div className="glass-card p-4">
@@ -28,52 +28,50 @@ export default function PFZPanel({ candidates }: PFZPanelProps) {
       </div>
 
       <div className="space-y-2">
-        {candidates.map((pfz, i) => {
-          const c = pfz.suitability === 'HIGH' ? '#22c55e' : pfz.suitability === 'MODERATE' ? '#eab308' : '#ef4444';
-          const width = `${pfz.score}%`;
+        {candidates.map((Pfz, I) => {
+          const C = Pfz.suitability === 'HIGH' ? '#22c55e' : Pfz.suitability === 'MODERATE' ? '#eab308' : '#ef4444';
+          const Width = `${Pfz.score}%`;
           return (
             <div
-              key={pfz.id}
+              key={Pfz.id}
               className="p-3 rounded-lg border transition-all hover:border-cyan-500/20"
-              style={{ borderColor: `${c}20`, background: `${c}06` }}
+              style={{ borderColor: `${C}20`, background: `${C}06` }}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-slate-200">Zone {i + 1}</span>
+                <span className="text-xs font-semibold text-slate-200">Zone {I + 1}</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                  style={{ color: c, borderColor: `${c}40`, background: `${c}10` }}>
-                  {pfz.suitability}
+                  style={{ color: C, borderColor: `${C}40`, background: `${C}10` }}>
+                  {Pfz.suitability}
                 </span>
               </div>
-              {/* Score bar */}
               <div className="mb-2">
                 <div className="flex justify-between text-[10px] text-slate-500 mb-1">
                   <span>Suitability Score</span>
-                  <span style={{ color: c }}>{pfz.score}/100</span>
+                  <span style={{ color: C }}>{Pfz.score}/100</span>
                 </div>
                 <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width, background: c }} />
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: Width, background: C }} />
                 </div>
               </div>
-              {/* Metadata */}
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
                 <span className="text-slate-500">Distance</span>
-                <span className="text-slate-300">{pfz.distance_km} km</span>
-                {pfz.sst_celsius !== undefined && (
+                <span className="text-slate-300">{Pfz.distance_km} km</span>
+                {Pfz.sst_celsius !== undefined && (
                   <>
                     <span className="text-slate-500">SST</span>
-                    <span className="text-slate-300">{pfz.sst_celsius}°C</span>
+                    <span className="text-slate-300">{Pfz.sst_celsius}°C</span>
                   </>
                 )}
-                {pfz.chlorophyll_level && (
+                {Pfz.chlorophyll_level && (
                   <>
                     <span className="text-slate-500">Chlorophyll</span>
-                    <span className="text-slate-300">{pfz.chlorophyll_level}</span>
+                    <span className="text-slate-300">{Pfz.chlorophyll_level}</span>
                   </>
                 )}
                 <span className="text-slate-500">Coords</span>
-                <span className="text-slate-300 font-mono">{pfz.latitude.toFixed(2)}, {pfz.longitude.toFixed(2)}</span>
+                <span className="text-slate-300 font-mono">{Pfz.latitude.toFixed(2)}, {Pfz.longitude.toFixed(2)}</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">{pfz.explanation}</p>
+              <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">{Pfz.explanation}</p>
             </div>
           );
         })}

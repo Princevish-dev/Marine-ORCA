@@ -4,16 +4,16 @@ import { AlertTriangle, X, ExternalLink } from 'lucide-react';
 import { SEVERITY_COLORS, severityBgClass } from '@/lib/constants';
 import type { AlertEvent } from '@/types';
 
-interface AlertToastProps {
+interface Alerttoastprops {
   alert: AlertEvent;
   onDismiss: (id: string) => void;
 }
 
-export function AlertToast({ alert, onDismiss }: AlertToastProps) {
-  const severityColor = SEVERITY_COLORS[alert.severity] ?? '#06b6d4';
-  const bgClass = severityBgClass(alert.severity);
+export function AlertToast({ alert, onDismiss }: Alerttoastprops) {
+  const Severitycolor = SEVERITY_COLORS[alert.severity] ?? '#06b6d4';
+  const Bgclass = severityBgClass(alert.severity);
 
-  const severityEmoji = {
+  const Severityemoji = {
     RED: '🚨',
     ORANGE: '🟠',
     YELLOW: '🟡',
@@ -22,17 +22,17 @@ export function AlertToast({ alert, onDismiss }: AlertToastProps) {
 
   return (
     <div
-      className={`animate-slide-in-right glass-card border p-4 max-w-sm ${bgClass}`}
-      style={{ borderLeftWidth: 4, borderLeftColor: severityColor }}
+      className={`animate-slide-in-right glass-card border p-4 max-w-sm ${Bgclass}`}
+      style={{ borderLeftWidth: 4, borderLeftColor: Severitycolor }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2 min-w-0">
-          <span className="text-lg flex-shrink-0">{severityEmoji}</span>
+          <span className="text-lg flex-shrink-0">{Severityemoji}</span>
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span
                 className="text-[10px] font-bold tracking-widest"
-                style={{ color: severityColor }}
+                style={{ color: Severitycolor }}
               >
                 {alert.severity} — MARINE ALERT
               </span>
@@ -64,24 +64,23 @@ export function AlertToast({ alert, onDismiss }: AlertToastProps) {
   );
 }
 
-interface AlertStackProps {
+interface Alertstackprops {
   alerts: AlertEvent[];
   onDismiss: (id: string) => void;
 }
 
-export function AlertStack({ alerts, onDismiss }: AlertStackProps) {
+export function AlertStack({ alerts, onDismiss }: Alertstackprops) {
   if (alerts.length === 0) return null;
   return (
     <div className="fixed top-20 right-4 z-50 flex flex-col gap-3 max-w-sm w-full">
-      {alerts.map((a) => (
-        <AlertToast key={a.id} alert={a} onDismiss={onDismiss} />
+      {alerts.map((A) => (
+        <AlertToast key={A.id} alert={A} onDismiss={onDismiss} />
       ))}
     </div>
   );
 }
 
-// ── Conflict card ─────────────────────────────────────────────────────────────
-interface CriticCardProps {
+interface Criticcardprops {
   hasConflict: boolean;
   sourceA: string;
   valueA: string;
@@ -92,7 +91,7 @@ interface CriticCardProps {
 
 export function CriticConflictCard({
   hasConflict, sourceA, valueA, sourceB, valueB, resolution,
-}: CriticCardProps) {
+}: Criticcardprops) {
   if (!hasConflict) return null;
 
   return (
@@ -103,19 +102,16 @@ export function CriticConflictCard({
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Source A */}
         <div className="flex-1 bg-slate-800/60 rounded-lg p-2.5 border border-slate-700/50">
           <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{sourceA}</p>
           <p className="text-xs text-slate-300 font-medium">{valueA}</p>
         </div>
 
-        {/* Conflict connector */}
         <div className="flex-shrink-0 text-center">
           <div className="text-amber-400 text-lg">⇌</div>
           <div className="text-[9px] text-red-400 font-bold">CONFLICT</div>
         </div>
 
-        {/* Source B */}
         <div className="flex-1 bg-red-900/20 rounded-lg p-2.5 border border-red-500/30">
           <p className="text-[10px] text-red-400/70 uppercase tracking-wider mb-1">{sourceB}</p>
           <p className="text-xs text-white font-semibold">{valueB}</p>
@@ -133,29 +129,28 @@ export function CriticConflictCard({
   );
 }
 
-// ── Geofence alert card ───────────────────────────────────────────────────────
-interface GeofenceCardProps {
+interface Geofencecardprops {
   status: 'NORMAL' | 'YELLOW' | 'ORANGE' | 'RED';
   distanceKm: number;
   zoneName: string;
 }
 
-export function GeofenceAlertCard({ status, distanceKm, zoneName }: GeofenceCardProps) {
+export function GeofenceAlertCard({ status, distanceKm, zoneName }: Geofencecardprops) {
   if (status === 'NORMAL') return null;
 
-  const configs = {
+  const Configs = {
     YELLOW: { emoji: '🟡', label: 'MARITIME BOUNDARY ADVISORY', color: 'text-yellow-400', border: 'border-yellow-500/30', bg: 'bg-yellow-500/5' },
     ORANGE: { emoji: '🟠', label: 'MARITIME BOUNDARY WARNING', color: 'text-orange-400', border: 'border-orange-500/30', bg: 'bg-orange-500/5' },
     RED: { emoji: '🔴', label: 'CRITICAL BOUNDARY ALERT', color: 'text-red-400', border: 'border-red-500/40', bg: 'bg-red-500/10' },
   }[status];
 
-  if (!configs) return null;
+  if (!Configs) return null;
 
   return (
-    <div className={`glass-card border p-3 ${configs.border} ${configs.bg} animate-slide-up`}>
+    <div className={`glass-card border p-3 ${Configs.border} ${Configs.bg} animate-slide-up`}>
       <div className="flex items-center gap-2 mb-2">
-        <span>{configs.emoji}</span>
-        <span className={`text-[10px] font-bold tracking-wider ${configs.color}`}>{configs.label}</span>
+        <span>{Configs.emoji}</span>
+        <span className={`text-[10px] font-bold tracking-wider ${Configs.color}`}>{Configs.label}</span>
       </div>
       <p className="text-xs text-slate-300 leading-relaxed">
         {status === 'RED'
@@ -164,7 +159,7 @@ export function GeofenceAlertCard({ status, distanceKm, zoneName }: GeofenceCard
       </p>
       <div className="mt-2 flex items-center gap-2">
         <span className="text-[10px] text-slate-500">Distance:</span>
-        <span className={`text-xs font-bold ${configs.color}`}>{distanceKm} km</span>
+        <span className={`text-xs font-bold ${Configs.color}`}>{distanceKm} km</span>
       </div>
       <p className="text-[10px] text-slate-600 mt-1.5">
         Demonstration threshold — not a verified legal boundary.
