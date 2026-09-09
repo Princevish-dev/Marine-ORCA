@@ -1,0 +1,156 @@
+from __future__ import annotations
+import httpx
+import math
+from datetime import datetime, timezone
+from app.models import WeatherObservation, MarineObservation, OceanObservation
+from app.config import settings
+from app.services.demo_fixtures import DEMO_WEATHER, DEMO_MARINE, DEMO_OCEAN
+
+_WEATHER_PARAMS = (
+    "wind_speed_10m,wind_direction_10m,temperature_2m,"
+    "precipitation,weather_code"
+)
+
+_MARINE_PARAMS = (
+    "wave_height,wave_direction,wave_period,"
+    "swell_wave_height,ocean_current_velocity,ocean_current_direction"
+)
+
+_TIMEOUT = 10.0
+
+
+async def fetch_weather(lat: float, lon: float) -> WeatherObservation:
+    if settings.demo_mode:
+        return WeatherObservation(**DEMO_WEATHER)
+
+    url = settings.weather_api_url
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "hourly": _WEATHER_PARAMS,
+        "forecast_days": 2,
+        "wind_speed_unit": "kmh",
+        "timezone": "auto",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            r = await client.get(url, params=params)
+            r.raise_for_status()
+            data = r.json()
+
+        hourly = data["hourly"]
+        idx = min(12, len(hourly["wind_speed_10m"]) - 1)
+        forecast_iso = hourly["time"][idx]
+
+        wmo = hourly.get("weather_code", [0])[idx]
+        condition = _wmo_to_condition(wmo)
+
+        return WeatherObservation(
+            source="Open-Meteo (open-meteo.com) — Forecast",
+            retrieved_at=datetime.now(timezone.utc),
+            forecast_time=datetime.fromisoformat(forecast_iso).replace(tzinfo=timezone.utc),
+            latitude=lat,
+            longitude=lon,
+            wind_speed_kmh=float(hourly["wind_speed_10m"][idx] or 0),
+            wind_direction_deg=float(hourly["wind_direction_10m"][idx] or 0),
+            temperature_c=float(hourly["temperature_2m"][idx] or 25),
+            precipitation_mm=float(hourly["precipitation"][idx] or 0),
+            weather_condition=condition,
+            is_demo=False,
+        )
+    except Exception as exc:
+        demo = WeatherObservation(**DEMO_WEATHER)
+        demo.source = f"DEMO FALLBACK (live fetch failed: {str(exc)[:60]})"
+        demo.is_demo = True
+        return demo
+
+
+async def fetch_marine(lat: float, lon: float) -> MarineObservation:
+    if settings.demo_mode:
+        return MarineObservation(**DEMO_MARINE)
+
+    url = settings.marine_api_url
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "hourly": _MARINE_PARAMS,
+        "forecast_days": 2,
+        "timezone": "auto",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            r = await client.get(url, params=params)
+            r.raise_for_status()
+            data = r.json()
+
+        hourly = data["hourly"]
+        idx = min(12, len(hourly["wave_height"]) - 1)
+        forecast_iso = hourly["time"][idx]
+
+        return MarineObservation(
+            source="Open-Meteo Marine (marine-api.open-meteo.com) — Forecast",
+            retrieved_at=datetime.now(timezone.utc),
+            forecast_time=datetime.fromisoformat(forecast_iso).replace(tzinfo=timezone.utc),
+            latitude=lat,
+            longitude=lon,
+            wave_height_m=float(hourly["wave_height"][idx] or 0),
+            wave_direction_deg=float(hourly["wave_direction"][idx] or 0),
+            wave_period_s=float(hourly["wave_period"][idx] or 6),
+            swell_height_m=float(hourly.get("swell_wave_height", [0])[idx] or 0),
+            current_speed_ms=float(hourly.get("ocean_current_velocity", [0])[idx] or 0),
+            current_direction_deg=float(hourly.get("ocean_current_direction", [0])[idx] or 0),
+            is_demo=False,
+        )
+    except Exception as exc:
+        demo = MarineObservation(**DEMO_MARINE)
+        demo.source = f"DEMO FALLBACK (live fetch failed: {str(exc)[:60]})"
+        demo.is_demo = True
+        return demo
+
+
+async def fetch_ocean_observation(lat: float, lon: float) -> OceanObservation:
+    if settings.demo_mode:
+        return OceanObservation(**DEMO_OCEAN)
+
+    try:
+        weather = await fetch_weather(lat, lon)
+        sst = weather.temperature_c - 1.5
+        chlorophyll = 0.5 + 0.8 * math.exp(-abs(lat - 12.0) / 3.0)
+
+        return OceanObservation(
+            source="Modelled proxy (EO-derived estimate — not satellite observation)",
+            retrieved_at=datetime.now(timezone.utc),
+            latitude=lat,
+            longitude=lon,
+            sst_celsius=round(sst, 1),
+            chlorophyll_mgm3=round(chlorophyll, 2),
+            data_type="MODEL",
+            is_demo=False,
+        )
+    except Exception as exc:
+        demo = OceanObservation(**DEMO_OCEAN)
+        demo.source = f"DEMO FALLBACK ocean (error: {str(exc)[:60]})"
+        demo.is_demo = True
+        return demo
+
+
+def _wmo_to_condition(code: int) -> str:
+    if code == 0:
+        return "Clear Sky"
+    elif code in (1, 2, 3):
+        return "Partly Cloudy"
+    elif code in range(45, 50):
+        return "Foggy"
+    elif code in range(51, 68):
+        return "Rain / Drizzle"
+    elif code in range(71, 78):
+        return "Snow"
+    elif code in range(80, 83):
+        return "Rain Showers"
+    elif code in range(85, 87):
+        return "Snow Showers"
+    elif code in (95, 96, 99):
+        return "Thunderstorm"
+    return "Unknown"
