@@ -56,7 +56,7 @@ LLM:      Google Gemini 1.5 Flash — interpretation + explanation only
 | Critic agent (conflict detection) | ✅ | Source priority system |
 | Agent trace (expandable) | ✅ | Per-stage timing + source |
 | Voice I/O | ✅ | Browser Web Speech API |
-| Interactive marine map (Leaflet) | ✅ | PFZ, route, geofence layers |
+| Interactive marine map (Deck.gl + React Map GL) | ✅ | PFZ, route, geofence layers |
 | Supabase Auth (Email + Google OAuth) | ✅ | Protected dashboard |
 | User Profiles (vessel, captain) | ✅ | Supabase Postgres + RLS |
 | ISRO EO Data Loader | ✅ | CSV ingestion for SST/Chl |
