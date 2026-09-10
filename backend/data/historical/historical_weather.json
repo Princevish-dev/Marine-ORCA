@@ -1,0 +1,15 @@
+[
+  {
+    "source": "Sample Historical Weather Data",
+    "retrieved_at": "2026-09-10T12:00:00Z",
+    "forecast_time": "2026-09-11T00:00:00Z",
+    "latitude": 13.0827,
+    "longitude": 80.2707,
+    "wind_speed_kmh": 15.5,
+    "wind_direction_deg": 120.0,
+    "temperature_c": 28.5,
+    "precipitation_mm": 0.0,
+    "weather_condition": "Clear Sky",
+    "is_demo": false
+  }
+]

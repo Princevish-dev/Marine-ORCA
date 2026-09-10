@@ -1,0 +1,9 @@
+[
+  {
+    "timestamp": "2026-09-11T12:00:00Z",
+    "coordinate": {"lat": 13.1, "lon": 80.3},
+    "warning": "Historical Alert: High waves observed near Chennai coast.",
+    "severity": 3,
+    "source": "Historical Samples"
+  }
+]

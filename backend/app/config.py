@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     guardian_interval_seconds: int = 300
 
     demo_mode: bool = False
+    use_historical_data: bool = True
+    historical_data_dir: str = "data/historical"
     app_env: str = "development"
 
     jwt_secret: str = ""

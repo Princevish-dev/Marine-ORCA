@@ -1,0 +1,16 @@
+[
+  {
+    "source": "Sample Historical Marine Data",
+    "retrieved_at": "2026-09-10T12:00:00Z",
+    "forecast_time": "2026-09-11T00:00:00Z",
+    "latitude": 13.0827,
+    "longitude": 80.2707,
+    "wave_height_m": 1.2,
+    "wave_direction_deg": 90.0,
+    "wave_period_s": 8.5,
+    "swell_height_m": 0.8,
+    "current_speed_ms": 0.3,
+    "current_direction_deg": 45.0,
+    "is_demo": false
+  }
+]

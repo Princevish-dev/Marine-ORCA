@@ -1,10 +1,12 @@
 import asyncio
 import json
 import random
+import os
 from datetime import datetime, timezone
 from fastapi import APIRouter, Request, Body
 from sse_starlette.sse import EventSourceResponse
 from app.services.data_providers import fetch_weather, fetch_marine
+from app.config import settings
 
 router = APIRouter()
 
@@ -50,26 +52,40 @@ async def guardian_poll(payload: dict = Body(...)):
     alerts = evaluate_thresholds(weather_data, marine_data, warnings)
     return {"alerts": alerts}
 
-async def mock_imd_rss_poll():
+async def historical_alerts_poll():
     """
-    Simulates polling an IMD RSS feed or Open-Meteo API for severe weather.
-    Yields high severity alerts (severity >= 3).
+    Reads alerts from data/historical/historical_alerts.json.
+    If USE_HISTORICAL_DATA is true, we only emit these alerts.
     """
+    filepath = os.path.join(settings.historical_data_dir, "historical_alerts.json")
+    if not os.path.exists(filepath):
+        # Provide one initial info message that system is waiting for historical alerts
+        event_data = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "warning": "Historical mode enabled. Waiting for sample alerts data...",
+            "severity": 1,
+            "source": "System"
+        }
+        yield json.dumps(event_data)
+        while True:
+            await asyncio.sleep(60)
+            
     while True:
-        # Simulate polling interval (e.g. 5 minutes in reality, shorter for demo)
-        await asyncio.sleep(10)
-        
-        # Randomly generate a severity for demonstration
-        severity = random.randint(1, 5)
-        
-        if severity >= 3:
-            event_data = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "coordinate": {"lat": 13.0827 + random.uniform(-0.1, 0.1), "lon": 80.2707 + random.uniform(-0.1, 0.1)},
-                "warning": f"SEVERE WEATHER ALERT: Level {severity} storm approaching.",
-                "severity": severity
-            }
-            yield json.dumps(event_data)
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                alerts = json.load(f)
+            
+            # Emit alerts one by one for demo purposes, or handle as a batch
+            for alert in alerts:
+                yield json.dumps(alert)
+                await asyncio.sleep(15) # Wait 15s between emitting historical alerts
+                
+        except Exception as e:
+            print(f"Error reading historical alerts: {e}")
+            await asyncio.sleep(60)
+            
+        # Loop over historical alerts periodically or wait
+        await asyncio.sleep(300)
 
 @router.get("/stream")
 async def guardian_stream(request: Request):
@@ -78,7 +94,7 @@ async def guardian_stream(request: Request):
     Clients connect to this endpoint to receive proactive 'toast' notifications.
     """
     async def event_generator():
-        async for event_payload in mock_imd_rss_poll():
+        async for event_payload in historical_alerts_poll():
             if await request.is_disconnected():
                 break
             yield {

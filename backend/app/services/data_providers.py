@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from app.models import WeatherObservation, MarineObservation, OceanObservation, WarningEvent
 from app.config import settings
 from app.services.demo_fixtures import DEMO_WEATHER, DEMO_MARINE, DEMO_OCEAN
+import os
 
 _WEATHER_PARAMS = (
     "wind_speed_10m,wind_direction_10m,temperature_2m,"
@@ -97,6 +98,21 @@ async def fetch_warning_events() -> list[WarningEvent]:
 
 
 async def fetch_weather(lat: float, lon: float) -> WeatherObservation:
+    if settings.use_historical_data:
+        filepath = os.path.join(settings.historical_data_dir, "historical_weather.json")
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Find the closest coordinate or just return the first for sample purposes
+            # For simplicity, assuming the JSON is a list of observations and we return the first one or closest
+            if isinstance(data, list) and len(data) > 0:
+                return WeatherObservation(**data[0])
+            elif isinstance(data, dict):
+                return WeatherObservation(**data)
+        except Exception:
+            # Fallback to demo if the user hasn't provided the historical file yet
+            pass
+            
     if settings.demo_mode:
         return WeatherObservation(**DEMO_WEATHER)
 
@@ -144,6 +160,18 @@ async def fetch_weather(lat: float, lon: float) -> WeatherObservation:
 
 
 async def fetch_marine(lat: float, lon: float) -> MarineObservation:
+    if settings.use_historical_data:
+        filepath = os.path.join(settings.historical_data_dir, "historical_marine.json")
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list) and len(data) > 0:
+                return MarineObservation(**data[0])
+            elif isinstance(data, dict):
+                return MarineObservation(**data)
+        except Exception:
+            pass
+
     if settings.demo_mode:
         return MarineObservation(**DEMO_MARINE)
 
