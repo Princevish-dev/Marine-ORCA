@@ -8,7 +8,6 @@ export const metadata: Metadata = {
   keywords: ['marine safety', 'ISRO', 'fishing zone', 'ocean intelligence', 'ORCA'],
 };
 
-import AuthProvider from '@/components/AuthProvider';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
       </head>
       <body className="h-full overflow-hidden" suppressHydrationWarning>
-        <AuthProvider>{children}</AuthProvider>
+        {children}
       </body>
     </html>
   );

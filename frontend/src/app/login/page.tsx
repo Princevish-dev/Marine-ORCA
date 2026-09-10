@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { GoogleLogin } from '@react-oauth/google';
 import { setToken, getToken } from '@/lib/api';
 
 export default function LoginPage() {
@@ -27,19 +26,15 @@ export default function LoginPage() {
           </div>
         )}
 
-        <GoogleLogin
-          onSuccess={(credentialResponse) => {
-            if (credentialResponse.credential) {
-              setToken(credentialResponse.credential);
-              router.push('/');
-            }
+        <button
+          onClick={() => {
+            setToken('local-dev-token');
+            router.push('/');
           }}
-          onError={() => {
-            setError('Login failed. Please try again.');
-          }}
-          theme="filled_black"
-          shape="pill"
-        />
+          className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-2 px-6 rounded-full transition-colors"
+        >
+          Enter Local Workspace
+        </button>
       </div>
     </div>
   );
