@@ -13,7 +13,6 @@
     "@deck.gl/layers": "^9.0.16",
     "@deck.gl/mapbox": "^9.0.16",
     "@deck.gl/react": "^9.0.16",
-    "@react-oauth/google": "^0.13.5",
     "@supabase/supabase-js": "^2.38.0",
     "axios": "^1.7.7",
     "jwt-decode": "^4.0.0",
