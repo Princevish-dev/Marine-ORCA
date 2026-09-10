@@ -1,10 +1,10 @@
 from pydantic_settings import BaseSettings
-from pydantic import field_validator, model_validator
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
     openweather_api_key: str = ""
-    ollama_enabled: bool = False
+    ollama_enabled: bool = True
     ollama_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "llama3.2:1b"
 
@@ -23,27 +23,11 @@ class Settings(BaseSettings):
 
     frontend_url: str = "http://localhost:3000"
 
+    bhashini_api_key: str = ""
+    bhashini_base_url: str = "https://meity-auth.ulcacontrib.org/ulca/apis/v0"
+
     max_query_length: int = 1000
     rate_limit: str = "20/minute"
-
-    @field_validator("jwt_secret")
-    @classmethod
-    def validate_jwt_secret_length(cls, v):
-        if v and len(v) < 32:
-            raise ValueError("JWT_SECRET must be at least 32 characters")
-        return v
-
-    @model_validator(mode="after")
-    def validate_production_security(self):
-        if self.app_env.lower() in {"production", "prod"}:
-            if not self.jwt_secret or self.jwt_secret in {
-                "orca_dev_secret_2026",
-                "orca_secret_key_change_in_production_2026",
-            }:
-                raise ValueError("JWT_SECRET must be configured in production")
-            if self.demo_mode:
-                raise ValueError("DEMO_MODE must be disabled in production")
-        return self
 
     @field_validator("marine_api_url", "weather_api_url", "imd_feed_url")
     @classmethod

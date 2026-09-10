@@ -2,10 +2,53 @@ import asyncio
 import json
 import random
 from datetime import datetime, timezone
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Body
 from sse_starlette.sse import EventSourceResponse
+from app.services.data_providers import fetch_weather, fetch_marine
 
 router = APIRouter()
+
+def _create_alert(alert_type: str, severity: str, title: str, loc: dict, desc: str) -> dict:
+    return {
+        "event_id": f"evt_{random.randint(1000, 9999)}",
+        "type": alert_type,
+        "severity": severity,
+        "title": title,
+        "description": desc,
+        "location": loc,
+        "detected_at": datetime.now(timezone.utc).isoformat(),
+        "status": "active"
+    }
+
+def evaluate_thresholds(weather_data, marine_data, warnings) -> list:
+    alerts = []
+    loc = {"lat": marine_data.latitude, "lng": marine_data.longitude} if marine_data else {}
+    
+    if marine_data and marine_data.wave_height_m > 2.5:
+        alerts.append(_create_alert("high_waves", "critical", "High Wave Alert", loc, f"Waves at {marine_data.wave_height_m}m"))
+        
+    if weather_data and weather_data.wind_speed_kmh > 30:
+        alerts.append(_create_alert("severe_weather", "critical", "High Wind Alert", loc, f"Winds at {weather_data.wind_speed_kmh}km/h"))
+        
+    for w in warnings:
+        if w.severity in ["ORANGE", "RED"]:
+            alerts.append(_create_alert("marine_warning", "critical", w.title, loc, w.description))
+            
+    return alerts
+
+@router.post("/poll")
+async def guardian_poll(payload: dict = Body(...)):
+    lat = payload.get("lat")
+    lng = payload.get("lng")
+    if not lat or not lng:
+        return {"alerts": []}
+    
+    weather_data = await fetch_weather(lat, lng)
+    marine_data = await fetch_marine(lat, lng)
+    warnings = []
+    
+    alerts = evaluate_thresholds(weather_data, marine_data, warnings)
+    return {"alerts": alerts}
 
 async def mock_imd_rss_poll():
     """

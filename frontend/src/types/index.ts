@@ -158,6 +158,7 @@ export interface MapData {
   geofence_geojson?: GeoJSONFeatureCollection;
   warning_areas: unknown[];
   layers_to_activate: string[];
+  fleet_congestion?: FleetCongestion;
 }
 
 export interface GeoJSONFeatureCollection {
@@ -194,6 +195,7 @@ export interface ChatResponse {
   alerts: AlertEvent[];
   pfz_candidates: PFZCandidate[];
   critic?: CriticResult;
+  collective_impact?: CollectiveImpactResult;
   trace: AgentTrace;
   is_demo: boolean;
 }
@@ -213,4 +215,46 @@ export interface Language {
   code: string;
   label: string;
   nativeLabel: string;
+}
+
+export type CongestionClass = 'LOW' | 'MODERATE' | 'HIGH';
+export type FleetRecommendation = 'GO' | 'CAUTION' | 'AVOID';
+
+export interface ZoneCongestion {
+  zone_id: string;
+  fish_probability: number;
+  safety_score: number;
+  fuel_efficiency: number;
+  current_vessel_count: number;
+  predicted_incoming: number;
+  fishing_pressure: number;
+  gear_conflict_risk: number;
+  ecological_pressure: number;
+  fcr_score: number;
+  congestion_class: CongestionClass;
+  recommendation: FleetRecommendation;
+}
+
+export interface CollectiveImpactResult {
+  zones: ZoneCongestion[];
+  collective_pressure_warning: boolean;
+  redistribution_note: string;
+  recommendation_concentration: number;
+  diversified_zones: string[];
+  avoided_zones: string[];
+}
+
+export interface FleetCongestionZone {
+  zone_id: string;
+  lat: number;
+  lng: number;
+  vessel_count: number;
+  fcr_score: number;
+  congestion_class: CongestionClass;
+  recommendation?: FleetRecommendation;
+}
+
+export interface FleetCongestion {
+  zones: FleetCongestionZone[];
+  pressure_warning: boolean;
 }

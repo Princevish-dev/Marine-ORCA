@@ -9,9 +9,11 @@ import EvidencePanel from '@/components/EvidencePanel';
 import PFZPanel from '@/components/PFZPanel';
 import RouteComparison from '@/components/RouteComparison';
 import { AlertStack, GeofenceAlertCard } from '@/components/AlertComponents';
-import { createSSEConnection, triggerTestAlert, fetchHealth } from '@/lib/api';
-import type { ChatResponse, AlertEvent, SafetyAssessment, EvidenceItem, MapData, PFZCandidate, RouteResult } from '@/types';
-import { supabase } from '@/lib/supabase';
+import SimulateFleetButton from '@/components/SimulateFleetButton';
+import DiversificationBanner from '@/components/DiversificationBanner';
+import ZoneDensityPanel from '@/components/ZoneDensityPanel';
+import { createSSEConnection, fetchHealth, getToken } from '@/lib/api';
+import type { ChatResponse, AlertEvent, SafetyAssessment, EvidenceItem, MapData, PFZCandidate, RouteResult, CollectiveImpactResult, FleetCongestionZone } from '@/types';
 import { useRouter } from 'next/navigation';
 
 const MarineMap = dynamic(() => import('@/components/MarineMap'), {
@@ -57,8 +59,6 @@ export default function DashboardPage() {
   const [Lastscan, Setlastscan] = useState<string>('');
   const [Demomode, Setdemomode] = useState(false);
   const SseRef = useRef<EventSource | null>(null);
-  const Router = useRouter();
-  const [Usr, Setusr] = useState<any>(null);
 
   const [Activealerts, Setactivealerts] = useState<AlertEvent[]>([]);
   const Dismissalert = (id: string) => Setactivealerts((prev) => prev.filter((a) => a.id !== id));
@@ -68,14 +68,25 @@ export default function DashboardPage() {
   const [Mapdata, Setmapdata] = useState<MapData | undefined>();
   const [Pfzcandidates, Setpfzcandidates] = useState<PFZCandidate[]>([]);
   const [Route, Setroute] = useState<RouteResult | undefined>();
-  const [Righttab, Setrighttab] = useState<'safety' | 'pfz' | 'route' | 'evidence'>('safety');
+  const [Righttab, Setrighttab] = useState<'safety' | 'pfz' | 'route' | 'evidence' | 'fleet'>('safety');
 
   const [Userlat, Setuserlat] = useState<number>(13.0827);
   const [Userlon, Setuserlon] = useState<number>(80.2707);
   const [Emergencyquery, Setemergencyquery] = useState<{ ts: number, text: string } | undefined>();
+  const [collective_impact, set_collective_impact] = useState<CollectiveImpactResult | undefined>();
+  const [fleet_zones, set_fleet_zones] = useState<FleetCongestionZone[]>([]);
+  const [pressure_warning, set_pressure_warning] = useState(false);
+  const [banner_visible, set_banner_visible] = useState(true);
 
   const [Mounted, Setmounted] = useState(false);
-  useEffect(() => Setmounted(true), []);
+  const router = useRouter();
+  
+  useEffect(() => {
+    Setmounted(true);
+    if (!getToken()) {
+      router.replace('/login');
+    }
+  }, [router]);
 
   const Handleresponse = useCallback((resp: ChatResponse) => {
     if (resp.safety) Setsafety(resp.safety);
@@ -90,10 +101,15 @@ export default function DashboardPage() {
       Setrighttab('route');
     }
     if (resp.is_demo) Setdemomode(true);
-  }, []);
-
-  useEffect(() => {
-    Setusr({ email: 'demo@orca.com', user_metadata: { full_name: 'Demo User' } });
+    if (resp.collective_impact) {
+      set_collective_impact(resp.collective_impact);
+      set_banner_visible(true);
+    }
+    if (resp.map_data?.fleet_congestion) {
+      set_fleet_zones(resp.map_data.fleet_congestion.zones || []);
+      set_pressure_warning(resp.map_data.fleet_congestion.pressure_warning || false);
+      Setrighttab('fleet');
+    }
   }, []);
 
   useEffect(() => {
@@ -164,8 +180,61 @@ export default function DashboardPage() {
     { id: 'safety', label: '🛡 Safety' },
     { id: 'pfz', label: '🐟 PFZ' },
     { id: 'route', label: '🗺 Route' },
+    { id: 'fleet', label: '🚢 Fleet' },
     { id: 'evidence', label: '📎 Evidence' },
   ] as const;
+
+  const handle_simulate = (fleet_size: number) => {
+    const simulated = fleet_zones.length > 0
+      ? fleet_zones.map((z, i) => {
+          const base_share = i === 0 ? 0.6 : (1 - 0.6) / Math.max(1, fleet_zones.length - 1);
+          const new_vessel_count = z.vessel_count + Math.round(fleet_size * base_share);
+          const new_fcr = Math.min(100, z.fcr_score + new_vessel_count * 1.5);
+          const new_class = new_fcr > 60 ? 'HIGH' as const : new_fcr > 30 ? 'MODERATE' as const : 'LOW' as const;
+          const new_rec = new_fcr > 60 ? 'AVOID' as const : new_fcr > 30 ? 'CAUTION' as const : 'GO' as const;
+          return { ...z, vessel_count: new_vessel_count, fcr_score: Math.round(new_fcr), congestion_class: new_class, recommendation: new_rec };
+        })
+      : [
+          { zone_id: 'PFZ-A', lat: 13.2, lng: 80.5, vessel_count: Math.round(fleet_size * 0.6), fcr_score: 82, congestion_class: 'HIGH' as const, recommendation: 'AVOID' as const },
+          { zone_id: 'PFZ-B', lat: 13.4, lng: 80.8, vessel_count: Math.round(fleet_size * 0.2), fcr_score: 28, congestion_class: 'LOW' as const, recommendation: 'GO' as const },
+          { zone_id: 'PFZ-C', lat: 12.9, lng: 80.3, vessel_count: Math.round(fleet_size * 0.1), fcr_score: 18, congestion_class: 'LOW' as const, recommendation: 'GO' as const },
+          { zone_id: 'PFZ-D', lat: 13.0, lng: 80.9, vessel_count: Math.round(fleet_size * 0.07), fcr_score: 12, congestion_class: 'LOW' as const, recommendation: 'GO' as const },
+          { zone_id: 'PFZ-E', lat: 13.5, lng: 80.1, vessel_count: Math.round(fleet_size * 0.03), fcr_score: 9, congestion_class: 'LOW' as const, recommendation: 'GO' as const },
+        ];
+
+    set_fleet_zones(simulated);
+    const has_high = simulated.some((z) => z.congestion_class === 'HIGH');
+    set_pressure_warning(has_high);
+
+    if (has_high) {
+      const avoided = simulated.filter((z) => z.recommendation === 'AVOID').map((z) => z.zone_id);
+      const diversified = simulated.filter((z) => z.recommendation !== 'AVOID').map((z) => z.zone_id);
+      set_collective_impact({
+        zones: simulated.map((z) => ({
+          zone_id: z.zone_id,
+          fish_probability: 95 - simulated.indexOf(z) * 7,
+          safety_score: 90,
+          fuel_efficiency: 85 - simulated.indexOf(z) * 3,
+          current_vessel_count: z.vessel_count,
+          predicted_incoming: Math.round(z.vessel_count * 0.3),
+          fishing_pressure: z.fcr_score * 0.8,
+          gear_conflict_risk: z.vessel_count > 15 ? 50 : 10,
+          ecological_pressure: z.vessel_count > 20 ? 40 : 10,
+          fcr_score: z.fcr_score,
+          congestion_class: z.congestion_class,
+          recommendation: z.recommendation || 'GO',
+        })),
+        collective_pressure_warning: true,
+        redistribution_note: `${avoided[0]} is individually best (fish probability 95%) but collectively unsafe due to high vessel density (${simulated[0]?.vessel_count} boats, FCR ${simulated[0]?.fcr_score}). ORCA recommends diversifying to ${diversified.slice(0, 3).join(', ')}.`,
+        recommendation_concentration: simulated[0]?.fcr_score || 0,
+        diversified_zones: diversified,
+        avoided_zones: avoided,
+      });
+      set_banner_visible(true);
+    }
+
+    Setrighttab('fleet');
+  };
 
   if (!Mounted) return null;
 
@@ -175,10 +244,6 @@ export default function DashboardPage() {
         Guardianstatus={Guardianstatus}
         Lastscan={Lastscan || undefined}
         Demomode={Demomode}
-        Usr={Usr}
-        Onlogout={async () => {
-          await supabase.auth.signOut();
-        }}
       />
 
       <div className="flex-1 flex gap-3 p-3 min-h-0 overflow-hidden">
@@ -212,8 +277,16 @@ export default function DashboardPage() {
                   ⚡ Test Alert
                 </button>
               )}
+              <SimulateFleetButton zones={fleet_zones} on_simulate={handle_simulate} />
             </div>
           </div>
+
+          {banner_visible && (
+            <DiversificationBanner
+              collective_impact={collective_impact}
+              on_dismiss={() => set_banner_visible(false)}
+            />
+          )}
 
           {Boundarystatus !== 'NORMAL' && (
             <div className="px-3 pt-2 flex-shrink-0">
@@ -291,6 +364,10 @@ export default function DashboardPage() {
             )}
 
             {Righttab === 'evidence' && <EvidencePanel evidence={Evidence} />}
+
+            {Righttab === 'fleet' && (
+              <ZoneDensityPanel zones={fleet_zones} pressure_warning={pressure_warning} />
+            )}
           </div>
 
           <div className="glass-card p-3 flex-shrink-0">

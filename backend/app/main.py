@@ -12,7 +12,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
-from app.api import chat, events, marine, health
+from app.api import chat, events, marine, health, language, guardian
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("orca")
@@ -38,7 +38,7 @@ app = FastAPI(
     description="Agentic AI marine decision-support platform",
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/docs" if settings.demo_mode else None,
+    docs_url="/docs" if settings.app_env.lower() not in {"production", "prod"} else None,
     redoc_url=None,
 )
 
@@ -54,10 +54,10 @@ if settings.app_env.lower() not in {"production", "prod"}:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_headers=["*"],
 )
 
 
@@ -86,9 +86,11 @@ async def limit_request_size(request: Request, call_next):
 
 
 app.include_router(health.router, prefix="/api", tags=["health"])
-app.include_router(chat.router, prefix="/api", tags=["chat"])
+app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(events.router, prefix="/api", tags=["events"])
-app.include_router(marine.router, prefix="/api", tags=["marine"])
+app.include_router(marine.router, prefix="/api/v1", tags=["marine"])
+app.include_router(language.router, prefix="/api/v1", tags=["language"])
+app.include_router(guardian.router, prefix="/api/v1/guardian", tags=["guardian"])
 
 
 @app.get("/")

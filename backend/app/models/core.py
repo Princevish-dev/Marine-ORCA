@@ -59,6 +59,7 @@ class OceanObservation(BaseModel):
     longitude: float
     sst_celsius: Optional[float] = None
     chlorophyll_mgm3: Optional[float] = None
+    sst_anomaly: Optional[float] = None
     data_type: Literal["EO", "MODEL", "DEMO"] = "EO"
     is_demo: bool = False
 
@@ -89,6 +90,8 @@ class BoundaryStatus(BaseModel):
     distance_km: float
     status: Literal["NORMAL", "YELLOW", "ORANGE", "RED"]
     inside: bool = False
+    ecological_penalty: float = 0.0
+    esz_proximity: bool = False
 
 
 class PFZCandidate(BaseModel):
@@ -101,6 +104,12 @@ class PFZCandidate(BaseModel):
     chlorophyll_level: Optional[str] = None
     explanation: str
     suitability: Literal["HIGH", "MODERATE", "LOW"]
+    catch_probability: Optional[float] = None
+    historical_catch_density: Optional[float] = None
+    stock_depletion_risk: bool = False
+    fcr_score: Optional[float] = None
+    congestion_class: Optional[Literal["LOW", "MODERATE", "HIGH"]] = None
+    fleet_recommendation: Optional[Literal["GO", "CAUTION", "AVOID"]] = None
 
 
 class SafetyFactor(BaseModel):
@@ -188,6 +197,30 @@ class CriticResult(BaseModel):
     confidence: float
 
 
+class ZoneCongestion(BaseModel):
+    zone_id: str
+    fish_probability: float
+    safety_score: float
+    fuel_efficiency: float
+    current_vessel_count: int = 0
+    predicted_incoming: int = 0
+    fishing_pressure: float = 0.0
+    gear_conflict_risk: float = 0.0
+    ecological_pressure: float = 0.0
+    fcr_score: float = 0.0
+    congestion_class: Literal["LOW", "MODERATE", "HIGH"] = "LOW"
+    recommendation: Literal["GO", "CAUTION", "AVOID"] = "GO"
+
+
+class CollectiveImpactResult(BaseModel):
+    zones: list[ZoneCongestion] = Field(default_factory=list)
+    collective_pressure_warning: bool = False
+    redistribution_note: str = ""
+    recommendation_concentration: float = 0.0
+    diversified_zones: list[str] = Field(default_factory=list)
+    avoided_zones: list[str] = Field(default_factory=list)
+
+
 class EvidenceItem(BaseModel):
     source: str
     type: Literal["Forecast", "Observation", "EO", "Official Warning", "Derived", "Demo"]
@@ -225,6 +258,7 @@ class MapData(BaseModel):
     geofence_geojson: Optional[dict] = None
     warning_areas: list[dict] = Field(default_factory=list)
     layers_to_activate: list[str] = Field(default_factory=list)
+    fleet_congestion: Optional[dict] = None
 
 
 class ChatResponse(BaseModel):
@@ -238,6 +272,7 @@ class ChatResponse(BaseModel):
     alerts: list[AlertEvent] = []
     pfz_candidates: list[PFZCandidate] = []
     critic: Optional[CriticResult] = None
+    collective_impact: Optional[CollectiveImpactResult] = None
     trace: AgentTrace
     is_demo: bool = False
 
@@ -257,6 +292,7 @@ class OrcaState(BaseModel):
     geo_result: Optional[BoundaryStatus] = None
     safety_result: Optional[SafetyAssessment] = None
     critic_result: Optional[CriticResult] = None
+    collective_impact_result: Optional[CollectiveImpactResult] = None
     route_result: Optional[RouteResult] = None
     warnings: list[WarningEvent] = []
     evidence: list[EvidenceItem] = []

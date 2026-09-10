@@ -106,6 +106,7 @@ def calculate_safety(
             boundary_penalty = 50.0
             boundary_status = "CRITICAL"
             boundary_label = "INSIDE restricted zone"
+            critical_override = True
         elif boundary.status == "RED":
             boundary_penalty = 30.0
             boundary_status = "CRITICAL"
@@ -118,7 +119,15 @@ def calculate_safety(
             boundary_penalty = 8.0
             boundary_status = "CAUTION"
             boundary_label = f"Approaching ({boundary.distance_km:.1f} km)"
-    factors.append(SafetyFactor(name="Boundary", value=boundary_label, penalty=boundary_penalty, status=boundary_status))
+            
+        # Apply Ecological Penalty
+        if boundary.ecological_penalty > 0:
+            boundary_penalty += boundary.ecological_penalty
+            if boundary_status == "GOOD":
+                boundary_status = "CAUTION"
+            boundary_label += f" | ESZ Penalty (+{boundary.ecological_penalty})"
+            
+    factors.append(SafetyFactor(name="Boundary/ESZ", value=boundary_label, penalty=boundary_penalty, status=boundary_status))
     score -= boundary_penalty
 
     pfz_bonus = 0.0
@@ -180,7 +189,7 @@ def _build_explanation(factors: list[SafetyFactor], override: bool, score: int) 
         top = penalties[0]
         lines.append(f"{top[0]} conditions are the largest contributor to risk.")
     if override:
-        lines.append("A severe official warning has triggered a CRITICAL override regardless of other factors.")
+        lines.append("A severe official warning or restricted zone violation has triggered a CRITICAL override regardless of other factors.")
     if score >= 80:
         lines.append("Overall conditions appear favorable for marine activities.")
     elif score >= 65:

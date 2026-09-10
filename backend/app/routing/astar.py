@@ -24,6 +24,8 @@ def build_route_grid(
     wave_height: float = 1.0,
     current_speed: float = 0.3,
     current_dir: float = 90.0,
+    vessel_fuel_rate_lph: float = 20.0,
+    simulation_mode: bool = False,
 ) -> RouteResult:
     GRID_STEP = 0.15
 
@@ -61,10 +63,22 @@ def build_route_grid(
 
     def edge_cost(from_lat, from_lon, to_lat, to_lon) -> float:
         dist = haversine_km(from_lat, from_lon, to_lat, to_lon)
+        
+        # Check boundary restrictions (mock restricted zone for demo: latitude > 13.5 and longitude > 81.0)
+        # In a real system, this would intersect with geofence polygons.
+        is_restricted = False
+        if to_lat > 13.5 and to_lon > 81.0:
+            is_restricted = True
+            
+        if is_restricted and not simulation_mode:
+            return float("inf") # Strictly avoid restricted areas
+            
         wave_pen = 1.0 + max(0, (wave_height - 1.5) * 0.3)
         cur_ben = current_benefit(from_lat, from_lon, to_lat, to_lon)
         LAMBDA = 0.6
-        return dist * wave_pen - LAMBDA * cur_ben * dist
+        restriction_penalty = 1000.0 if is_restricted else 0.0
+        
+        return dist * wave_pen - LAMBDA * cur_ben * dist + restriction_penalty
 
     def heuristic(lat, lon) -> float:
         return haversine_km(lat, lon, e_lat, e_lon)
@@ -131,7 +145,13 @@ def build_route_grid(
 
     direct_risk = min(1.0, 0.3 + wave_height * 0.1)
     orca_risk = direct_risk * 0.75
-    fuel_reduction = max(0, round((direct_dist * 0.08 - (orca_dist - direct_dist) * 0.05) / direct_dist * 100, 1))
+    
+    # Fuel estimate based on distance and current benefit
+    # Modeled estimate: base consumption + wave drag - current benefit
+    direct_fuel = direct_dist * (vessel_fuel_rate_lph / 10.0) * (1.0 + wave_height * 0.05)
+    orca_fuel = orca_dist * (vessel_fuel_rate_lph / 10.0) * (1.0 + wave_height * 0.02) * (0.9 if current_speed > 0.2 else 1.0)
+    
+    fuel_reduction = max(0.0, round((direct_fuel - orca_fuel) / direct_fuel * 100, 1)) if direct_fuel > 0 else 0.0
     risk_reduction = round((direct_risk - orca_risk) / direct_risk * 100, 1)
 
     return RouteResult(
@@ -147,7 +167,7 @@ def build_route_grid(
         explanation=(
             f"ORCA route adds {round(orca_dist - direct_dist, 1)} km to leverage favorable current "
             f"and reduce exposure to {wave_height:.1f} m wave zone. "
-            f"Modelled fuel reduction: ~{fuel_reduction}%. "
-            "These are MODELLED ESTIMATES — not verified vessel fuel measurements."
+            f"MODELED FUEL ESTIMATE: ~{fuel_reduction}% reduction compared to direct route. "
+            "These are MODELED ESTIMATES — not verified vessel fuel measurements."
         ),
     )

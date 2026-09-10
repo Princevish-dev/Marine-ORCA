@@ -57,8 +57,8 @@ LLM:      Ollama llama3.2:1b — interpretation + explanation only
 | Agent trace (expandable) | ✅ | Per-stage timing + source |
 | Voice I/O | ✅ | Browser Web Speech API |
 | Interactive marine map (Deck.gl + React Map GL) | ✅ | PFZ, route, geofence layers |
-| Supabase Auth (Email + Google OAuth) | ⚠️ | Frontend session/profile flow; backend API authorization must be added before production |
-| User Profiles (vessel, captain) | ✅ | Supabase Postgres + RLS |
+| Local profile (vessel, captain) | ✅ | localStorage — no login |
+| Auth / login | ❌ | Disabled for working prototype |
 | ISRO EO Data Loader | ✅ | CSV ingestion for SST/Chl |
 | Demo mode (fixture data) | ✅ | Clearly labelled |
 
@@ -225,24 +225,22 @@ Critical:
 - `OLLAMA_ENABLED=true` — enable local Ollama reasoning
 - `OLLAMA_URL=http://127.0.0.1:11434` — local Ollama endpoint
 - `OLLAMA_MODEL=llama3.2:1b` — local model used by planner and report agents
-- `DEMO_MODE=true` — use fixture data (no live APIs needed)
-- `APP_ENV=production` requires a random `JWT_SECRET` of at least 32 characters and disables demo mode
+- `DEMO_MODE=false` — working mode (live Open-Meteo); `true` uses fixture data
+- `APP_ENV=development` — local prototype (API auth disabled)
 - `GUARDIAN_INTERVAL_SECONDS=15` — fast guardian for demo
-- `NEXT_PUBLIC_SUPABASE_URL` — your Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — your Supabase anon key
 - `ISRO_DATA_DIR=data/isro` — path to downloaded ISRO CSV data
 
 ---
 
 ## Known Limitations (Prototype)
 
+- Login/auth is disabled for the local working prototype (open dashboard, open API)
 - SST and chlorophyll use modelled proxies, not satellite data (clearly labelled)
 - Maritime boundaries are demonstration thresholds, not legal boundaries
 - Route fuel savings are modelled estimates, not vessel measurements
 - Voice recognition quality depends on browser and microphone
 - Ollama is used for NL responses; deterministic fallback remains available if Ollama is offline
 - Live IMD warning ingestion accepts normalized JSON or RSS when `IMD_FEED_URL` is configured; demo warnings remain synthetic
-- Production REST endpoints verify Supabase-compatible JWT bearer tokens using the configured `JWT_SECRET`; keep SSE behind a trusted network boundary if alerts become user-specific
 
 ---
 

@@ -1,17 +1,14 @@
 'use client';
 
 import { Activity, Shield, Wifi, WifiOff, AlertTriangle, User } from 'lucide-react';
-import Link from 'next/link';
 
 interface Headerprops {
   Guardianstatus: 'ACTIVE' | 'DEGRADED' | 'OFFLINE';
   Lastscan?: string;
   Demomode?: boolean;
-  Usr?: any;
-  Onlogout?: () => void;
 }
 
-export default function Header({ Guardianstatus, Lastscan, Demomode, Usr, Onlogout }: Headerprops) {
+export default function Header({ Guardianstatus, Lastscan, Demomode }: Headerprops) {
   const Statusconfig = {
     ACTIVE: { color: 'text-emerald-400', dot: 'bg-emerald-400', label: 'GUARDIAN ACTIVE', icon: Wifi },
     DEGRADED: { color: 'text-yellow-400', dot: 'bg-yellow-400', label: 'DEGRADED', icon: AlertTriangle },
@@ -81,7 +78,7 @@ export default function Header({ Guardianstatus, Lastscan, Demomode, Usr, Onlogo
         <div className="flex items-center gap-3 border-l border-slate-700 pl-4 ml-2">
           <div className="flex items-center gap-2 text-xs text-slate-300">
             <User className="w-4 h-4" />
-            <span>Demo User</span>
+            <span>Local User</span>
           </div>
         </div>
       </div>

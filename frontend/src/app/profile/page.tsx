@@ -1,66 +1,46 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { User, Ship, LogOut, ArrowLeft } from 'lucide-react';
+import { User, Ship, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+
+const STORAGE_KEY = 'orca_local_profile';
 
 export default function ProfilePage() {
   const [Loading, Setloading] = useState(true);
   const [Saving, Setsaving] = useState(false);
-  const [Usr, Setusr] = useState<any>(null);
-  const [Fullname, Setfullname] = useState('');
-  const [Vesselname, Setvesselname] = useState('');
+  const [Fullname, Setfullname] = useState('Demo Captain');
+  const [Vesselname, Setvesselname] = useState('ORCA-1');
   const [Message, Setmessage] = useState('');
-  const Router = useRouter();
 
   useEffect(() => {
-    async function Loadprofile() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        Router.push('/login');
-        return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        Setfullname(data.full_name || 'Demo Captain');
+        Setvesselname(data.vessel_name || 'ORCA-1');
       }
-      Setusr(session.user);
-
-      const { data } = await supabase
-        .from('profiles')
-        .select('full_name, vessel_name')
-        .eq('id', session.user.id)
-        .single();
-
-      if (data) {
-        Setfullname(data.full_name || '');
-        Setvesselname(data.vessel_name || '');
-      }
-      Setloading(false);
+    } catch {
+      /* ignore */
     }
-    Loadprofile();
-  }, [Router]);
+    Setloading(false);
+  }, []);
 
-  const Updateprofile = async (e: React.FormEvent) => {
+  const Updateprofile = (e: React.FormEvent) => {
     e.preventDefault();
     Setsaving(true);
     Setmessage('');
-
-    const { error } = await supabase.from('profiles').upsert({
-      id: Usr.id,
-      full_name: Fullname,
-      vessel_name: Vesselname,
-    });
-
-    if (error) {
-      Setmessage(`Error: ${error.message}`);
-    } else {
-      Setmessage('Profile updated successfully.');
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ full_name: Fullname, vessel_name: Vesselname })
+      );
+      Setmessage('Profile saved locally (auth disabled).');
+    } catch {
+      Setmessage('Error: could not save profile.');
     }
     Setsaving(false);
-  };
-
-  const Handlelogout = async () => {
-    await supabase.auth.signOut();
-    Router.push('/login');
   };
 
   if (Loading) return null;
@@ -73,18 +53,12 @@ export default function ProfilePage() {
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
-          <button
-            onClick={Handlelogout}
-            className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
         </div>
 
         <div className="glass-card-dark p-8">
-          <h1 className="text-2xl font-bold tracking-widest text-white mb-6 uppercase">Vessel Profile</h1>
-          
+          <h1 className="text-2xl font-bold tracking-widest text-white mb-2 uppercase">Vessel Profile</h1>
+          <p className="text-xs text-slate-500 mb-6">Local prototype profile — no sign-in required.</p>
+
           {Message && (
             <div className={`p-3 rounded-lg text-sm mb-6 ${Message.includes('Error') ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
               {Message}
@@ -97,7 +71,7 @@ export default function ProfilePage() {
               <input
                 type="text"
                 disabled
-                value={Usr?.email || ''}
+                value="prototype@orca.local"
                 className="w-full bg-slate-900/50 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-500 cursor-not-allowed"
               />
             </div>

@@ -1,35 +1,25 @@
 from __future__ import annotations
 
-from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
-
-from app.config import settings
+from fastapi import Request
 
 
-bearer = HTTPBearer(auto_error=False)
+import os
+from fastapi import Request, HTTPException, status
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "dummy-client-id.apps.googleusercontent.com")
 
-async def require_api_user(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
-) -> dict:
-    if settings.app_env.lower() not in {"production", "prod"}:
-        return {"sub": "development"}
-
-    if credentials is None or credentials.scheme.lower() != "bearer":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Bearer token required")
-
+async def require_api_user(request: Request) -> dict:
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid token")
+    
+    token = auth_header.split(" ")[1]
+    
     try:
-        claims = jwt.decode(
-            credentials.credentials,
-            settings.jwt_secret,
-            algorithms=[settings.jwt_algorithm],
-            audience="authenticated",
-        )
-    except JWTError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token") from exc
-
-    if not claims.get("sub"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token subject missing")
-    return claims
+        # Verify the Google JWT token
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), GOOGLE_CLIENT_ID)
+        return idinfo
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}")

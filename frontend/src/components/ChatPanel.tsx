@@ -241,7 +241,7 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
       const Errormsg: ChatMessage = {
         id: `e-${Date.now()}`,
         role: 'assistant',
-        content: 'ORCA could not complete the reasoning workflow. Please check the backend is running and retry.',
+        content: err instanceof Error ? err.message : 'ORCA could not complete the reasoning workflow. Please check the backend is running and retry.',
         timestamp: new Date(),
       };
       Setmessages((prev) => [...prev, Errormsg]);

@@ -49,10 +49,9 @@ Is content ko paste karke save karein:
 
 ```env
 APP_ENV=development
-DEMO_MODE=true
+DEMO_MODE=false
 GUARDIAN_ENABLED=true
 GUARDIAN_INTERVAL_SECONDS=15
-JWT_SECRET=orca-local-development-secret-key-32-characters
 OLLAMA_ENABLED=true
 OLLAMA_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=llama3.2:1b
@@ -60,7 +59,9 @@ IMD_FEED_URL=
 FRONTEND_URL=http://localhost:3000
 ```
 
-`DEMO_MODE=true` me external marine APIs aur remote LLM key ke bina demo chalega. Ollama local hona chahiye.
+`DEMO_MODE=false` = working mode (live Open-Meteo data). Login/auth disabled — open http://localhost:3000 seedha dashboard. Ollama local chalana zaroori hai (`ollama serve` + model pull).
+
+> Offline demo chahiye ho to `DEMO_MODE=true` set karein.
 
 ## 4. Backend Run Karein
 
@@ -102,8 +103,9 @@ cd "d:\HackaThon SIH\orca\backend"
 py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-$env:DEMO_MODE="true"
+$env:DEMO_MODE="false"
 $env:APP_ENV="development"
+$env:OLLAMA_ENABLED="true"
 $env:GUARDIAN_ENABLED="true"
 python -m uvicorn app.main:app --reload --port 8000
 ```
@@ -147,7 +149,6 @@ Live mode ke liye `backend/.env` me ye values set karein:
 APP_ENV=development
 DEMO_MODE=false
 GUARDIAN_ENABLED=true
-JWT_SECRET=your-random-secret-at-least-32-characters
 OLLAMA_ENABLED=true
 OLLAMA_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=llama3.2:1b
@@ -155,19 +156,11 @@ IMD_FEED_URL=your-official-imd-json-or-rss-feed
 FRONTEND_URL=http://localhost:3000
 ```
 
-Live mode me Open-Meteo marine/weather APIs use honge. Ollama unavailable hone par deterministic fallback answer milega.
+Live / working mode me Open-Meteo marine/weather APIs use honge. Login auth nahi hai. Ollama unavailable hone par deterministic fallback answer milega.
 
-## 9. Production Security
+## 9. Production Note
 
-Production me:
-
-```env
-APP_ENV=production
-DEMO_MODE=false
-JWT_SECRET=your-supabase-jwt-signing-secret
-```
-
-Production JWT secret ko GitHub par kabhi upload na karein. `.env` local machine par hi rakhein.
+Ye build local working prototype ke liye hai — **login/JWT auth disabled**. Production deploy se pehle auth wapas add karna hoga. `.env` ko GitHub par upload na karein.
 
 ## 10. Common Problems
 

@@ -5,6 +5,7 @@ from .core import (
     PFZCandidate, SafetyFactor, SafetyAssessment,
     RoutePoint, RouteResult, TraceStage, AgentTrace,
     AlertEvent, ConflictItem, CriticResult,
+    ZoneCongestion, CollectiveImpactResult,
     EvidenceItem, ChatRequest, ChatResponse, MapData, OrcaState,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "PFZCandidate", "SafetyFactor", "SafetyAssessment",
     "RoutePoint", "RouteResult", "TraceStage", "AgentTrace",
     "AlertEvent", "ConflictItem", "CriticResult",
+    "ZoneCongestion", "CollectiveImpactResult",
     "EvidenceItem", "ChatRequest", "ChatResponse", "MapData", "OrcaState",
 ]
