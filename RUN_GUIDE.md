@@ -18,6 +18,13 @@ node --version
 npm --version
 ```
 
+## 1.5. Download Project
+
+```powershell
+git clone https://github.com/Princevish-dev/Marine-ORCA.git
+cd Marine-ORCA
+```
+
 ## 2. Backend Setup
 
 PowerShell me:

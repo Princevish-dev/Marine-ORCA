@@ -59,6 +59,8 @@ LLM:      Ollama llama3.2:1b — interpretation + explanation only
 | Interactive marine map (Deck.gl + React Map GL) | ✅ | PFZ, route, geofence layers |
 | Local profile (vessel, captain) | ✅ | localStorage — no login |
 | Auth / login | ❌ | Disabled for working prototype |
+| Local-First Architecture | ✅ | Fully local IndexedDB storage, privacy-first |
+| Anti-Congestion Intelligence | ✅ | Fleet density tracking & redistribution |
 | ISRO EO Data Loader | ✅ | CSV ingestion for SST/Chl |
 | Demo mode (fixture data) | ✅ | Clearly labelled |
 
@@ -116,6 +118,13 @@ orca/
 
 ## HOW TO RUN
 
+### Clone Repository
+
+```bash
+git clone https://github.com/Princevish-dev/Marine-ORCA.git
+cd Marine-ORCA
+```
+
 ### Prerequisites
 - Python 3.11+
 - Node.js 20+
@@ -143,6 +152,7 @@ API docs at **http://localhost:8000/docs**
 
 ```bash
 cd orca/frontend
+```
 
 npm install
 
