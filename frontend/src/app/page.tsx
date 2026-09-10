@@ -93,24 +93,8 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    const isOauthCallback = window.location.hash.includes('access_token') || window.location.search.includes('code=');
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        Setusr(session.user);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        Setusr(session.user);
-      } else {
-        Setusr(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [Router]);
+    Setusr({ email: 'demo@orca.com', user_metadata: { full_name: 'Demo User' } });
+  }, []);
 
   useEffect(() => {
     fetchHealth()

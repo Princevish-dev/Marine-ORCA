@@ -72,6 +72,37 @@ _guardian_status = {
 }
 
 
+async def _poll_mock_imd_feed():
+    if not settings.demo_mode:
+        return
+
+    mock_warning = {
+        "severity": 3,
+        "coordinate": {"latitude": 13.5, "longitude": 84.0},
+        "warning": "Mock IMD severe marine warning: avoid small-vessel operations.",
+    }
+    if mock_warning["severity"] < 3:
+        return
+
+    now = datetime.now(timezone.utc)
+    event = AlertEvent(
+        id="mock-imd-severe-marine-warning",
+        type="marine_warning",
+        severity="RED",
+        source="Mock IMD RSS Feed",
+        title="Severe Marine Warning",
+        description=mock_warning["warning"],
+        latitude=mock_warning["coordinate"]["latitude"],
+        longitude=mock_warning["coordinate"]["longitude"],
+        affected_area="Bay of Bengal — Eastern Sector",
+        effective_time=now,
+        expiry_time=now + timedelta(hours=6),
+        detected_at=now,
+        status="NEW",
+    )
+    await event_bus.publish(event)
+
+
 async def _evaluate_marine_alerts(lat: float, lon: float, location_name: str):
     url = settings.marine_api_url
     params = {
@@ -142,6 +173,7 @@ async def run_guardian():
             _evaluate_marine_alerts(loc["lat"], loc["lon"], loc["name"])
             for loc in _MONITOR_LOCATIONS
         ]
+        tasks.append(_poll_mock_imd_feed())
         await asyncio.gather(*tasks, return_exceptions=True)
         await asyncio.sleep(settings.guardian_interval_seconds)
 

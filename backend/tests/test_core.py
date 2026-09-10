@@ -5,6 +5,9 @@ from app.models import WeatherObservation, MarineObservation, WarningEvent, Boun
 from app.services.safety_calculator import calculate_safety, is_high_wave, is_severe_warning, is_cyclone
 from app.geospatial.engine import haversine_km, check_boundary_status, calculate_pfz_score
 from app.services.safety_calculator import WAVE_HIGH_THRESHOLD
+from app.agents.critic import critic_agent
+from app.agents.vision_anomaly import vision_anomaly_agent
+from app.agents.orchestrator import planner_node, report_agent_node
 
 
 def _weather(wind=10.0):
@@ -134,3 +137,54 @@ class TestRouting:
         from app.routing.astar import build_route_grid
         route = build_route_grid(13.0, 80.0, 13.5, 80.5, wave_height=2.5)
         assert route.orca_risk <= route.direct_risk
+
+
+class TestAgentSafety:
+    def test_greeting_skips_marine_agents(self):
+        result = planner_node({
+            "request_id": "test",
+            "query": "hello",
+            "language": "en",
+            "trace": {"request_id": "test", "stages": []},
+        })
+        assert result["intent"] == "conversation"
+        assert result["planned_agents"] == ["report"]
+
+    def test_greeting_returns_conversational_response(self):
+        result = report_agent_node({
+            "request_id": "test",
+            "query": "hello",
+            "language": "en",
+            "intent": "conversation",
+            "planned_agents": ["report"],
+            "trace": {"request_id": "test", "stages": []},
+        })
+        assert "marine query" in result["final_answer"].lower()
+
+    def test_critic_overrides_pfz_for_severe_weather(self):
+        result = critic_agent({"weather_data": {"severity": 3}, "pfz_score": 88, "messages": []})
+        assert result["pfz_score"] == 0
+        assert result["is_safe"] is False
+        assert result["messages"][0]["priority"] == "high"
+
+    def test_critic_preserves_pfz_for_normal_weather(self):
+        result = critic_agent({"weather_data": {"severity": 2}, "pfz_score": 88, "messages": []})
+        assert result["pfz_score"] == 88
+        assert result["is_safe"] is True
+        assert result["messages"] == []
+
+    def test_dark_vessel_alert_requires_missing_ais_match(self):
+        result = vision_anomaly_agent(
+            {"latitude": 13.1, "longitude": 80.3},
+            [],
+            wake_detected=True,
+        )
+        assert result["alerts"][0]["tag"] == "DARK_VESSEL_DETECTED"
+
+    def test_dark_vessel_with_ais_match_is_not_alerted(self):
+        result = vision_anomaly_agent(
+            {"latitude": 13.1, "longitude": 80.3},
+            [{"latitude": 13.101, "longitude": 80.301, "mmsi": "123456789"}],
+            wake_detected=True,
+        )
+        assert result["detected"] is False

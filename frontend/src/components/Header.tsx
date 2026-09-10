@@ -1,6 +1,6 @@
 'use client';
 
-import { Activity, Shield, Wifi, WifiOff, AlertTriangle, User, LogOut } from 'lucide-react';
+import { Activity, Shield, Wifi, WifiOff, AlertTriangle, User } from 'lucide-react';
 import Link from 'next/link';
 
 interface Headerprops {
@@ -78,23 +78,12 @@ export default function Header({ Guardianstatus, Lastscan, Demomode, Usr, Onlogo
           <span className="text-xs text-slate-300 font-medium">SIH 2026</span>
         </div>
 
-        {Usr ? (
-          <div className="flex items-center gap-3 border-l border-slate-700 pl-4 ml-2">
-            <Link href="/profile" className="flex items-center gap-2 text-xs text-slate-300 hover:text-cyan-400 transition-colors">
-              <User className="w-4 h-4" />
-              <span>Profile</span>
-            </Link>
-            <button onClick={Onlogout} className="text-xs text-slate-500 hover:text-red-400 transition-colors">
-              <LogOut className="w-4 h-4" />
-            </button>
+        <div className="flex items-center gap-3 border-l border-slate-700 pl-4 ml-2">
+          <div className="flex items-center gap-2 text-xs text-slate-300">
+            <User className="w-4 h-4" />
+            <span>Demo User</span>
           </div>
-        ) : (
-          <div className="flex items-center gap-3 border-l border-slate-700 pl-4 ml-2">
-            <Link href="/login" className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-semibold">
-              Sign In
-            </Link>
-          </div>
-        )}
+        </div>
       </div>
     </header>
   );

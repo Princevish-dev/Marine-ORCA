@@ -2,13 +2,12 @@ from __future__ import annotations
 import asyncio
 import uuid
 import json
+import logging
 import math
 import re
 from datetime import datetime, timezone, timedelta
 from typing import Any
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 
 from app.models import (
@@ -25,32 +24,13 @@ from app.services.demo_fixtures import DEMO_WARNING
 from app.services.safety_calculator import calculate_safety
 from app.geospatial.engine import check_boundary_status, generate_pfz_candidates, get_geofence_geojson
 from app.routing.astar import build_route_grid
+from app.services.ollama import generate_local_context, generate_ollama_response
 
-
-def _get_llm():
-    if not settings.gemini_api_key:
-        return None
-    return ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        google_api_key=settings.gemini_api_key,
-        temperature=0.2,
-        max_tokens=1024,
-    )
+logger = logging.getLogger("orca.orchestrator")
 
 
 def _llm_call(prompt: str, system: str = "") -> str:
-    llm = _get_llm()
-    if not llm:
-        return prompt
-    try:
-        msgs = []
-        if system:
-            msgs.append(SystemMessage(content=system))
-        msgs.append(HumanMessage(content=prompt))
-        response = llm.invoke(msgs)
-        return response.content
-    except Exception as exc:
-        return f"[LLM unavailable: {str(exc)[:80]}]"
+    return generate_ollama_response(prompt, system) or "[Ollama unavailable]"
 
 
 def _start_stage(state: OrcaState, stage_id: str, name: str) -> OrcaState:
@@ -93,6 +73,21 @@ def planner_node(state: dict) -> dict:
     if not s.location:
         s.location = Coordinates(latitude=13.0827, longitude=80.2707)
 
+    greeting_words = {
+        "hi", "hello", "hey", "hii", "helo", "namaste", "namaskar",
+        "good morning", "good afternoon", "good evening", "thanks", "thank you",
+    }
+    if query.strip().lower() in greeting_words:
+        s.intent = "conversation"
+        s.planned_agents = ["report"]
+        s = _complete_stage(
+            s,
+            "planner",
+            source="ORCA Intent Router",
+            summary="Conversation message; marine data agents skipped",
+        )
+        return s.model_dump()
+
     if settings.demo_mode:
         s.warnings = [WarningEvent(**DEMO_WARNING)]
     elif settings.imd_feed_url:
@@ -123,7 +118,13 @@ def planner_node(state: dict) -> dict:
             s.intent = parsed.get("intent", "marine_safety")
             agents = parsed.get("agents", [])
             mandatory = ["weather", "marine", "safety", "critic", "report"]
-            if s.intent == "escape_route":
+            if s.intent == "conversation":
+                mandatory = ["report"]
+            query_lower = query.lower()
+            route_requested = any(word in query_lower for word in [
+                "route", "navigate", "shortest", "path", "escape", "nearest port", "रास्ता",
+            ])
+            if s.intent == "escape_route" or s.intent == "route_planning" or route_requested:
                 mandatory.append("route")
             s.planned_agents = list(set(mandatory + agents))
         else:
@@ -144,7 +145,7 @@ def planner_node(state: dict) -> dict:
             s.planned_agents = ["weather", "marine", "safety", "geospatial", "critic", "report"]
 
     summary = f"Intent: {s.intent} | Agents: {', '.join(s.planned_agents)}"
-    s = _complete_stage(s, "planner", source="ORCA Planner + Gemini", summary=summary)
+    s = _complete_stage(s, "planner", source="ORCA Planner + Ollama", summary=summary)
     return s.model_dump()
 
 
@@ -428,6 +429,22 @@ def report_agent_node(state: dict) -> dict:
     s = _start_stage(s, "report", "Report Agent")
 
     try:
+        if s.intent == "conversation":
+            greetings = {
+                "hi": "Hello! I am ORCA. Ask me about marine safety, weather, fishing zones, or routes.",
+                "hello": "Hello! I am ORCA. How can I help with your marine query?",
+                "hey": "Hey! Ask ORCA about marine safety, weather, PFZs, or routes.",
+            }
+            answer = greetings.get(s.query.strip().lower(), "Hello! How can I help with your marine query?")
+            s.final_answer = answer
+            s = _complete_stage(
+                s,
+                "report",
+                source="ORCA Conversation Router",
+                summary="Greeting response generated",
+            )
+            return s.model_dump()
+
         safety = s.safety_result
         weather = s.weather_result
         marine = s.marine_result
@@ -452,6 +469,12 @@ def report_agent_node(state: dict) -> dict:
                 f"(vs direct {s.route_result.direct_distance_km} km), "
                 f"modelled fuel saving {s.route_result.fuel_reduction_pct}%"
             )
+        local_context = generate_local_context(
+            s.query,
+            s.session_context.get("history", []),
+        )
+        if local_context:
+            context_lines.append(f"Local Ollama context, continuity only: {local_context}")
         context = "\n".join(context_lines)
         is_demo = any([
             getattr(s.weather_result, "is_demo", False),
@@ -478,7 +501,7 @@ Format: Brief assessment paragraph, then key conditions list, then recommendatio
 
         answer = _llm_call(context, system_prompt)
 
-        if "[LLM unavailable" in answer or not answer.strip():
+        if "[Ollama unavailable]" in answer or not answer.strip():
             if safety:
                 if safety.score >= 80:
                     status_word = "favorable" if lang == "en" else "अनुकूल" if lang == "hi" else "favorable"
@@ -498,7 +521,7 @@ Format: Brief assessment paragraph, then key conditions list, then recommendatio
                 answer = "ORCA could not complete the full assessment. Please retry."
 
         s.final_answer = answer
-        s = _complete_stage(s, "report", source="Gemini 1.5 Flash + ORCA Evidence Engine",
+        s = _complete_stage(s, "report", source="Ollama + ORCA Evidence Engine",
                              summary="Response generated successfully")
     except Exception as exc:
         s.final_answer = "ORCA could not complete the reasoning workflow. Please retry."
@@ -562,6 +585,7 @@ async def run_orca(request: ChatRequest) -> ChatResponse:
         location=Coordinates(latitude=request.latitude, longitude=request.longitude)
         if request.latitude is not None and request.longitude is not None else None,
         trace=AgentTrace(request_id=request_id, stages=[]),
+        session_context={"history": request.history},
     )
 
     try:

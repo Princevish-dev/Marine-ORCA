@@ -8,8 +8,8 @@ interface Safetygaugeprops {
 }
 
 export default function SafetyGauge({ safety }: Safetygaugeprops) {
-  const Score = safety?.score ?? 82;
-  const Label = safety?.label ?? 'GOOD';
+  const Score = safety?.score ?? 0;
+  const Label = safety?.label ?? 'CAUTION';
   const Color = safety?.color ?? SAFETY_COLORS[Label] ?? '#22c55e';
   const Factors = safety?.factors ?? [];
 

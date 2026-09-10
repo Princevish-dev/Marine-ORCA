@@ -2,6 +2,7 @@ from __future__ import annotations
 import math
 from shapely.geometry import Point, Polygon, LineString, mapping
 from shapely.ops import nearest_points
+import geopandas as gpd
 from app.models import BoundaryStatus, RoutePoint, RouteResult
 
 _IMBL_DEMO = Polygon([
@@ -148,3 +149,31 @@ def generate_pfz_candidates(lat: float, lon: float, ocean_sst: float | None, oce
         })
 
     return sorted(candidates, key=lambda x: x["score"], reverse=True)
+
+
+def check_geojson_boundary_violation(lon: float, lat: float, geojson_path: str) -> dict:
+    """
+    Deterministic Geofencing using GeoPandas and Shapely.
+    Reads a GeoJSON of restricted boundary polygons, checks if the ship's
+    location (lon, lat) is inside any restricted polygon, and calculates
+    the exact distance to the nearest boundary edge.
+    """
+    gdf = gpd.read_file(geojson_path)
+
+    ship_point = Point(lon, lat)
+    is_violating = False
+    min_distance = float('inf')
+
+    # Iterate over geometries to check containment and distance
+    for geom in gdf.geometry:
+        if geom.contains(ship_point):
+            is_violating = True
+
+        dist = geom.boundary.distance(ship_point)
+        if dist < min_distance:
+            min_distance = dist
+
+    return {
+        "is_violating": is_violating,
+        "nearest_boundary_distance_deg": min_distance
+    }

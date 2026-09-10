@@ -78,7 +78,7 @@ export default function PFZPanel({ candidates }: Pfzpanelprops) {
       </div>
 
       <p className="mt-3 text-[10px] text-slate-600 leading-relaxed">
-        "Potentially suitable" — not a guarantee of fish presence. Based on EO-derived indicators.
+        &quot;Potentially suitable&quot; — not a guarantee of fish presence. Based on EO-derived indicators.
       </p>
     </div>
   );

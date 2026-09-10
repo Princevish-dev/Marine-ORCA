@@ -37,7 +37,7 @@ ORCA is an **agentic AI marine intelligence platform** that continuously observe
 └─────────────────────────────────────────────────────┘
 
 External: Open-Meteo (Marine + Weather) — free, no key needed
-LLM:      Google Gemini 1.5 Flash — interpretation + explanation only
+LLM:      Ollama llama3.2:1b — interpretation + explanation only
 ```
 
 ---
@@ -46,7 +46,7 @@ LLM:      Google Gemini 1.5 Flash — interpretation + explanation only
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Conversational AI (EN + 7 Indian languages) | ✅ | Gemini 1.5 Flash |
+| Conversational AI (EN + 7 Indian languages) | ✅ | Ollama llama3.2:1b |
 | Agentic orchestration (LangGraph) | ✅ | 10 specialized agents |
 | Safety barometer (0–100, deterministic) | ✅ | No LLM scoring |
 | PFZ suitability engine | ✅ | EO-derived formula |
@@ -75,7 +75,7 @@ LLM:      Google Gemini 1.5 Flash — interpretation + explanation only
 | PFZ score | **Derived formula** | EO-derived SST + Chl model |
 | Safety score | **Deterministic formula** | ORCA calculation |
 | Route fuel savings | **Modelled estimate** | A* hydrodynamic model |
-| NL response | **LLM explanation** | Gemini — explains evidence only |
+| NL response | **LLM explanation** | Ollama — explains evidence only |
 | Maritime boundary | **Demo demonstration** | Not official legal boundary |
 
 ---
@@ -119,7 +119,7 @@ orca/
 ### Prerequisites
 - Python 3.11+
 - Node.js 20+
-- A Gemini API key (free at [aistudio.google.com](https://aistudio.google.com))
+- Ollama with the `llama3.2:1b` model installed locally
 
 ### Backend
 
@@ -188,7 +188,7 @@ Geospatial Agent     → Shapely boundary + distance
 Safety Agent         → Deterministic safety score
 Route Agent          → A* hydrodynamic routing
 Critic Agent         → Source conflict detection
-Report Agent         → Gemini NL response generation
+Report Agent         → Ollama NL response generation
 ```
 
 LLM is used **only** for interpretation and explanation.
@@ -222,7 +222,9 @@ Tests cover: safety scoring, alert predicates, geospatial engine, route engine.
 See [`.env.example`](./.env.example) for all configurable variables.
 
 Critical:
-- `GEMINI_API_KEY` — LLM (get free at aistudio.google.com)
+- `OLLAMA_ENABLED=true` — enable local Ollama reasoning
+- `OLLAMA_URL=http://127.0.0.1:11434` — local Ollama endpoint
+- `OLLAMA_MODEL=llama3.2:1b` — local model used by planner and report agents
 - `DEMO_MODE=true` — use fixture data (no live APIs needed)
 - `APP_ENV=production` requires a random `JWT_SECRET` of at least 32 characters and disables demo mode
 - `GUARDIAN_INTERVAL_SECONDS=15` — fast guardian for demo
@@ -238,7 +240,7 @@ Critical:
 - Maritime boundaries are demonstration thresholds, not legal boundaries
 - Route fuel savings are modelled estimates, not vessel measurements
 - Voice recognition quality depends on browser and microphone
-- Gemini API key required for NL responses; deterministic fallback provided
+- Ollama is used for NL responses; deterministic fallback remains available if Ollama is offline
 - Live IMD warning ingestion accepts normalized JSON or RSS when `IMD_FEED_URL` is configured; demo warnings remain synthetic
 - Production REST endpoints verify Supabase-compatible JWT bearer tokens using the configured `JWT_SECRET`; keep SSE behind a trusted network boundary if alerts become user-specific
 

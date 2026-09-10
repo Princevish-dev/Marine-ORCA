@@ -114,12 +114,53 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
   ]);
   const [Input, Setinput] = useState('');
   const [Isloading, Setisloading] = useState(false);
+  const [Isonline, Setisonline] = useState(true);
   const [Loadingstage, Setloadingstage] = useState('');
   const [Lang, Setlang] = useState<Language>(LANGUAGES[0]);
   const [Showlangmenu, Setshowlangmenu] = useState(false);
   const BottomRef = useRef<HTMLDivElement>(null);
   const StagetimerRef = useRef<NodeJS.Timeout>();
   const StageidxRef = useRef(0);
+  const OfflineNoticeRef = useRef(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('orca-chat-history');
+    if (!saved) return;
+    try {
+      const history = JSON.parse(saved) as ChatMessage[];
+      Setmessages(history.map((message) => ({ ...message, timestamp: new Date(message.timestamp) })));
+    } catch {
+      localStorage.removeItem('orca-chat-history');
+    }
+  }, []);
+
+  useEffect(() => {
+    const updateNetworkState = () => Setisonline(navigator.onLine);
+    updateNetworkState();
+    window.addEventListener('online', updateNetworkState);
+    window.addEventListener('offline', updateNetworkState);
+    return () => {
+      window.removeEventListener('online', updateNetworkState);
+      window.removeEventListener('offline', updateNetworkState);
+    };
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('orca-chat-history', JSON.stringify(Messages.slice(-12)));
+  }, [Messages]);
+
+  useEffect(() => {
+    if (Isonline || OfflineNoticeRef.current) return;
+    const lastResponse = [...Messages].reverse().find((message) => message.response);
+    const score = lastResponse?.response?.safety?.score;
+    const reminder = score === undefined
+      ? 'You are offline. ORCA is using cached information only; verify conditions before departure.'
+      : score < 50
+        ? `Offline reminder: your last known marine safety score was ${score}/100. Avoid departure until official conditions are confirmed.`
+        : `Offline reminder: your last known marine safety score was ${score}/100. This is cached information, not a live forecast.`;
+    Setmessages((prev) => [...prev, { id: `offline-${Date.now()}`, role: 'system', content: reminder, timestamp: new Date() }]);
+    OfflineNoticeRef.current = true;
+  }, [Isonline, Messages]);
 
   const { isListening, transcript, isSpeaking, startListening, stopListening, speak, stopSpeaking, supported: Voicesupported } = useVoice();
 
@@ -150,6 +191,16 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
   const Handlesend = useCallback(async (Queryoverride?: string) => {
     const Q = (Queryoverride ?? Input).trim();
     if (!Q || Isloading) return;
+    if (!Isonline) {
+      Setmessages((prev) => [...prev, {
+        id: `offline-${Date.now()}`,
+        role: 'system',
+        content: 'Live marine search is unavailable offline. ORCA is showing cached information only.',
+        timestamp: new Date(),
+      }]);
+      Setinput('');
+      return;
+    }
 
     const Usermsg: ChatMessage = {
       id: `u-${Date.now()}`,
@@ -169,6 +220,7 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
         language: Lang.code,
         latitude: defaultLat,
         longitude: defaultLon,
+        history: Messages.slice(-8).map((message) => ({ role: message.role, content: message.content })),
       });
 
       const Assistmsg: ChatMessage = {
@@ -197,7 +249,7 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
       Setisloading(false);
       Stoploadingcycle();
     }
-  }, [Input, Isloading, Lang, defaultLat, defaultLon, onResponse, speak, Voicesupported]);
+  }, [Input, Isloading, Isonline, Lang, Messages, defaultLat, defaultLon, onResponse, speak, Voicesupported]);
 
   useEffect(() => {
     if (emergencyQuery && emergencyQuery.ts > 0) {
@@ -219,6 +271,7 @@ export default function ChatPanel({ onResponse, defaultLat = 13.0827, defaultLon
           <Sparkles className="w-4 h-4 text-cyan-400" />
           <span className="text-sm font-semibold text-slate-200">Conversational Assistant</span>
         </div>
+        {!Isonline && <span className="text-[10px] text-amber-400">OFFLINE · CACHED DATA</span>}
         <div className="relative">
           <button
             onClick={() => Setshowlangmenu((v) => !v)}

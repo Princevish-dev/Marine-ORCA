@@ -4,11 +4,7 @@ import { supabase } from '@/lib/supabase';
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 async function authHeaders(): Promise<HeadersInit> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  return token
-    ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
-    : { 'Content-Type': 'application/json' };
+  return { 'Content-Type': 'application/json' };
 }
 
 export async function sendChatMessage(req: ChatRequest): Promise<ChatResponse> {
@@ -55,17 +51,12 @@ export async function fetchHealth() {
   return res.json();
 }
 
-export async function triggerTestAlert() {
-  const res = await fetch(`${BASE_URL}/api/alerts/test`, { method: 'POST', headers: await authHeaders() });
-  return res.json();
-}
-
 export function createSSEConnection(
   onAlert: (event: AlertEvent) => void,
   onConnect: () => void,
   onError: () => void
 ): EventSource {
-  const es = new EventSource(`${BASE_URL}/api/events`);
+  const es = new EventSource(`${BASE_URL}/api/v1/guardian/stream`);
 
   es.onmessage = (e) => {
     try {

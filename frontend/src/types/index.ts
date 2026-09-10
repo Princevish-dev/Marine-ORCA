@@ -180,6 +180,7 @@ export interface ChatRequest {
   latitude?: number;
   longitude?: number;
   session_id?: string;
+  history?: Array<{ role: string; content: string }>;
 }
 
 export interface ChatResponse {

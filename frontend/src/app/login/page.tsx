@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseConfigured } from '@/lib/supabase';
 import { Shield, Mail, Lock, User, Ship } from 'lucide-react';
 import Link from 'next/link';
 
@@ -18,6 +18,10 @@ export default function LoginPage() {
 
   const Handleauth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabaseConfigured) {
+      Seterror('Sign in is not configured. Add the Supabase URL and public key to frontend/.env.local.');
+      return;
+    }
     Setloading(true);
     Seterror('');
 
@@ -45,13 +49,20 @@ export default function LoginPage() {
         Seterror('Signup successful! You can now log in.');
       }
     } catch (err: any) {
-      Seterror(err.message);
+      const message = err?.message || 'Authentication failed.';
+      Seterror(message.includes('Email not confirmed')
+        ? 'Confirm your email from the Supabase verification message before signing in.'
+        : message);
     } finally {
       Setloading(false);
     }
   };
 
   const Handlegooglelogin = async () => {
+    if (!supabaseConfigured) {
+      Seterror('Google sign in is not configured. Add the Supabase URL and public key to frontend/.env.local.');
+      return;
+    }
     Setloading(true);
     Seterror('');
     try {

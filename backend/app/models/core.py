@@ -153,7 +153,7 @@ class TraceStage(BaseModel):
 class AgentTrace(BaseModel):
     request_id: str
     total_duration_ms: float = 0
-    stages: list[TraceStage] = []
+    stages: list[TraceStage] = Field(default_factory=list)
 
 
 class AlertEvent(BaseModel):
@@ -181,9 +181,9 @@ class ConflictItem(BaseModel):
 
 class CriticResult(BaseModel):
     has_conflict: bool
-    conflicts: list[ConflictItem] = []
-    stale_sources: list[str] = []
-    missing_sources: list[str] = []
+    conflicts: list[ConflictItem] = Field(default_factory=list)
+    stale_sources: list[str] = Field(default_factory=list)
+    missing_sources: list[str] = Field(default_factory=list)
     resolution_summary: str
     confidence: float
 
@@ -202,6 +202,7 @@ class ChatRequest(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     session_id: Optional[str] = None
+    history: list[dict[str, str]] = Field(default_factory=list, max_length=8)
 
     @field_validator("query")
     @classmethod
@@ -219,11 +220,11 @@ class ChatRequest(BaseModel):
 
 class MapData(BaseModel):
     user_location: Optional[dict] = None
-    pfz_candidates: list[dict] = []
+    pfz_candidates: list[dict] = Field(default_factory=list)
     route_geojson: Optional[dict] = None
     geofence_geojson: Optional[dict] = None
-    warning_areas: list[dict] = []
-    layers_to_activate: list[str] = []
+    warning_areas: list[dict] = Field(default_factory=list)
+    layers_to_activate: list[str] = Field(default_factory=list)
 
 
 class ChatResponse(BaseModel):

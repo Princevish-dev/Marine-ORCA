@@ -3,8 +3,10 @@ from pydantic import field_validator, model_validator
 
 
 class Settings(BaseSettings):
-    gemini_api_key: str = ""
     openweather_api_key: str = ""
+    ollama_enabled: bool = False
+    ollama_url: str = "http://127.0.0.1:11434"
+    ollama_model: str = "llama3.2:1b"
 
     guardian_enabled: bool = True
     guardian_interval_seconds: int = 300
@@ -17,7 +19,7 @@ class Settings(BaseSettings):
 
     marine_api_url: str = "https://marine-api.open-meteo.com/v1/marine"
     weather_api_url: str = "https://api.open-meteo.com/v1/forecast"
-    imd_feed_url: str = ""
+    imd_feed_url: str = "https://mosdac.gov.in/isrocast.xml"
 
     frontend_url: str = "http://localhost:3000"
 
@@ -49,6 +51,13 @@ class Settings(BaseSettings):
         if v and not v.startswith("https://"):
             raise ValueError("API URLs must use HTTPS")
         return v
+
+    @field_validator("ollama_url")
+    @classmethod
+    def validate_ollama_url(cls, v):
+        if not v.startswith(("http://127.0.0.1", "http://localhost", "https://")):
+            raise ValueError("OLLAMA_URL must use localhost or HTTPS")
+        return v.rstrip("/")
 
     class Config:
         env_file = ".env"

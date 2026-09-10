@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import Map, { NavigationControl, ScaleControl, Popup } from 'react-map-gl/maplibre';
+import type { StyleSpecification } from 'maplibre-gl';
 import { DeckGL } from '@deck.gl/react';
 import { ScatterplotLayer, PathLayer, PolygonLayer, IconLayer } from '@deck.gl/layers';
 import type { MapData, GeoJSONFeatureCollection } from '@/types';
@@ -27,7 +28,24 @@ const INITIAL_VIEW = {
   bearing: 0,
 };
 
-const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+const MAP_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors',
+    },
+  },
+  layers: [
+    {
+      id: 'osm-tiles',
+      type: 'raster',
+      source: 'osm',
+    },
+  ],
+};
 
 export default function MarineMap({ mapData, geofenceGeoJSON }: Marinemapprops) {
   const [Viewstate, Setviewstate] = useState(INITIAL_VIEW);

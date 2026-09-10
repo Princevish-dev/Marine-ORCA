@@ -53,12 +53,14 @@ DEMO_MODE=true
 GUARDIAN_ENABLED=true
 GUARDIAN_INTERVAL_SECONDS=15
 JWT_SECRET=orca-local-development-secret-key-32-characters
-GEMINI_API_KEY=
+OLLAMA_ENABLED=true
+OLLAMA_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=llama3.2:1b
 IMD_FEED_URL=
 FRONTEND_URL=http://localhost:3000
 ```
 
-`DEMO_MODE=true` me external marine APIs aur Gemini key ke bina demo chalega.
+`DEMO_MODE=true` me external marine APIs aur remote LLM key ke bina demo chalega. Ollama local hona chahiye.
 
 ## 4. Backend Run Karein
 
@@ -146,12 +148,14 @@ APP_ENV=development
 DEMO_MODE=false
 GUARDIAN_ENABLED=true
 JWT_SECRET=your-random-secret-at-least-32-characters
-GEMINI_API_KEY=your-gemini-api-key
+OLLAMA_ENABLED=true
+OLLAMA_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=llama3.2:1b
 IMD_FEED_URL=your-official-imd-json-or-rss-feed
 FRONTEND_URL=http://localhost:3000
 ```
 
-Live mode me Open-Meteo marine/weather APIs use honge. Gemini key na hone par deterministic fallback answer milega.
+Live mode me Open-Meteo marine/weather APIs use honge. Ollama unavailable hone par deterministic fallback answer milega.
 
 ## 9. Production Security
 

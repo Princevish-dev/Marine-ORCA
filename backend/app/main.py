@@ -45,11 +45,12 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-ALLOWED_ORIGINS = [
-    settings.frontend_url,
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+ALLOWED_ORIGINS = [settings.frontend_url]
+if settings.app_env.lower() not in {"production", "prod"}:
+    ALLOWED_ORIGINS.extend([
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ])
 
 app.add_middleware(
     CORSMiddleware,
