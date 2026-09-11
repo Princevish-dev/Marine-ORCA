@@ -1,0 +1,32 @@
+2026-09-11 03:45:29,583 [INFO] ======================================================================
+2026-09-11 03:45:29,585 [INFO] ORCA Bhoonidhi OCM-3 Downloader — Starting
+2026-09-11 03:45:29,586 [INFO]   Output    : P:\SIH2026\ORCA\backend\data\bhoonidhi
+2026-09-11 03:45:29,587 [INFO]   Date range: last 20 days
+2026-09-11 03:45:29,588 [INFO]   AOI bbox  : {'min_lat': 5.0, 'max_lat': 25.0, 'min_lon': 65.0, 'max_lon': 95.0}
+2026-09-11 03:45:29,589 [INFO]   Dry run   : True
+2026-09-11 03:45:29,589 [INFO]   Resume    : True
+2026-09-11 03:45:29,589 [INFO] ======================================================================
+2026-09-11 03:45:29,598 [INFO] Processing 21 dates × 4 tiles = 84 queries
+2026-09-11 03:45:29,598 [INFO] Querying products for 2026-08-21 | bbox [5.0,65.0 → 15.0,80.0]
+2026-09-11 03:45:31,339 [WARNING] Request failed (attempt 1/3): Client error '404 Not Found' for url 'https://bhoonidhi.nrsc.gov.in/api/v1/products/search'
+For more information check:  — retrying in 5s
+2026-09-11 03:45:37,486 [WARNING] Request failed (attempt 2/3): Client error '404 Not Found' for url 'https://bhoonidhi.nrsc.gov.in/api/v1/products/search'
+For more information check:  — retrying in 10s
+2026-09-11 03:45:48,469 [WARNING] Request failed (attempt 3/3): Client error '404 Not Found' for url 'https://bhoonidhi.nrsc.gov.in/api/v1/products/search'
+For more information check:  — retrying in 20s
+2026-09-11 03:46:08,507 [WARNING] Query failed for 2026-08-21: All 3 retries exhausted for https://bhoonidhi.nrsc.gov.in/api/v1/products/search
+2026-09-11 03:46:08,526 [INFO] No data available for 2026-08-21 tile 1 — skipping
+2026-09-11 03:46:08,532 [INFO] Querying products for 2026-08-21 | bbox [5.0,80.0 → 15.0,95.0]
+2026-09-11 03:46:09,783 [WARNING] Request failed (attempt 1/3): Client error '404 Not Found' for url 'https://bhoonidhi.nrsc.gov.in/api/v1/products/search'
+For more information check:  — retrying in 5s
+2026-09-11 03:46:16,251 [WARNING] Request failed (attempt 2/3): Client error '404 Not Found' for url 'https://bhoonidhi.nrsc.gov.in/api/v1/products/search'
+For more information check:  — retrying in 10s
+2026-09-11 03:46:27,339 [WARNING] Request failed (attempt 3/3): Client error '404 Not Found' for url 'https://bhoonidhi.nrsc.gov.in/api/v1/products/search'
+For more information check:  — retrying in 20s
+2026-09-11 03:46:47,372 [WARNING] Query failed for 2026-08-21: All 3 retries exhausted for https://bhoonidhi.nrsc.gov.in/api/v1/products/search
+2026-09-11 03:46:47,394 [INFO] No data available for 2026-08-21 tile 2 — skipping
+2026-09-11 03:46:47,404 [INFO] Querying products for 2026-08-21 | bbox [15.0,65.0 → 25.0,80.0]
+2026-09-11 03:46:48,599 [WARNING] Request failed (attempt 1/3): Client error '404 Not Found' for url 'https://bhoonidhi.nrsc.gov.in/api/v1/products/search'
+For more information check:  — retrying in 5s
+2026-09-11 03:46:54,204 [WARNING] Request failed (attempt 2/3): Client error '404 Not Found' for url 'https://bhoonidhi.nrsc.gov.in/api/v1/products/search'
+For more information check:  — retrying in 10s
